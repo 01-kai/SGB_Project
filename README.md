@@ -1,0 +1,273 @@
+# Synthetic Governance Benchmark (SGB)
+
+<p align="center">
+  <strong>A reproducible agent-based simulation framework for benchmarking data governance maturity across synthetic multi-organizational ecosystems.</strong>
+</p>
+
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.12%2B-blue">
+  <img alt="Mesa" src="https://img.shields.io/badge/ABM-Mesa-green">
+  <img alt="Status" src="https://img.shields.io/badge/status-research%20prototype-orange">
+  <img alt="License" src="https://img.shields.io/badge/license-academic-lightgrey">
+</p>
+
+---
+
+## Overview
+
+**Synthetic Governance Benchmark (SGB)** is a computational framework for evaluating data governance maturity models in simulated multi-organizational ecosystems.
+
+The framework models organizations as autonomous agents with configurable governance profiles and simulates inter-organizational data exchange events under different governance maturity frameworks. It is designed to support reproducible experimentation without requiring access to real organizational data.
+
+SGB was developed for the research project:
+
+> **Synthetic Benchmarking of Data Governance Maturity Across Simulated Multi-Organizational Ecosystems: A Computational Framework and Agent-Based Evaluation Approach**
+
+The simulator is used to compare governance maturity frameworks, evaluate failure propagation, estimate onboarding thresholds for the National Data Exchange Layer (NDEL), and analyze the trade-off between resilience and exchange efficiency.
+
+---
+
+## Research Motivation
+
+Assessing data governance maturity in real multi-organizational environments is difficult because of:
+
+- data sensitivity,
+- access restrictions,
+- institutional heterogeneity,
+- lack of comparable real-world benchmarks,
+- and limited availability of longitudinal governance data.
+
+SGB addresses this problem by replacing direct empirical access with a **fully synthetic, reproducible, simulation-based evaluation environment**.
+
+The framework allows researchers and policymakers to ask questions such as:
+
+- Which maturity framework produces better ecosystem-level governance outcomes?
+- How do governance failures propagate through connected organizations?
+- What minimum GMI threshold should be required for NDEL onboarding?
+- Does higher maturity always improve resilience and efficiency?
+
+---
+
+## Core Concepts
+
+SGB evaluates organizations using a **Governance Maturity Index (GMI)**.
+
+The standard GMI includes five dimensions:
+
+| Code | Dimension | Description |
+|---|---|---|
+| D1 | Data Quality | Completeness, duplicate rate, schema validation |
+| D2 | Security Posture | Encryption coverage, breach detection, policy violations |
+| D3 | Metadata Completeness | Lineage, catalog coverage, catalog freshness |
+| D4 | Regulatory Compliance | Rule satisfaction and consent propagation |
+| D5 | Interoperability | Schema reconciliation, API adherence, format translation |
+
+The Iran-Specific Framework (**ISF**) adds a sixth dimension:
+
+| Code | Dimension | Description |
+|---|---|---|
+| SVC | Sovereignty Compliance | Localization, cross-border flags, audit trail retention |
+
+---
+
+## Compared Frameworks
+
+SGB currently compares three maturity framework profiles:
+
+| Framework | Description |
+|---|---|
+| DBL | DAMA-DMBOK-like baseline framework |
+| DMM | Data Management Maturity-style process-oriented framework |
+| ISF | Iran-Specific Framework with Sovereignty Compliance |
+
+Each framework uses different GMI weights and recovery behavior.
+
+---
+
+## Experiments
+
+The simulator runs four experiments.
+
+| Experiment | Purpose | Main Output |
+|---|---|---|
+| Experiment 1 | Compare DBL, DMM, and ISF under normal conditions | Table 2 |
+| Experiment 2 | Inject a Security Incident and measure failure propagation | Figure 2, Table 3 |
+| Experiment 3 | Evaluate NDEL onboarding thresholds | Figure 3, Table 4 |
+| Experiment 4 | Analyze resilience-efficiency trade-off | Figure 4, Table 5 |
+
+---
+
+## Project Structure
+
+```text
+SGB_Project/
+├── sgb/
+│   ├── __init__.py
+│   ├── agents.py
+│   ├── model.py
+│   ├── perturbations.py
+│   ├── frameworks.py
+│   ├── metrics.py
+│   ├── experiments.py
+│   ├── visualize.py
+│   └── config.yaml
+│
+├── outputs/
+│   ├── raw/
+│   ├── tables/
+│   └── figures/
+│
+├── requirements.txt
+├── README.md
+└── .gitignore
+
+Installation
+
+Clone the repository:
+
+git clone https://github.com/YOUR_USERNAME/SGB_Project.git
+cd SGB_Project
+
+Create a virtual environment:
+
+python3 -m venv .venv
+
+Activate the environment:
+
+source .venv/bin/activate
+
+Install dependencies:
+
+pip install -r requirements.txt
+
+If requirements.txt is unavailable, install manually:
+
+pip install mesa numpy scipy networkx pandas matplotlib seaborn statsmodels pyyaml
+Configuration
+
+Simulation settings are stored in:
+
+sgb/config.yaml
+
+Final experiment configuration:
+
+simulation:
+  N: 50
+  T: 500
+  seeds: 30
+  ba_m: 3
+
+Parameter meaning:
+
+Parameter	Meaning
+N	Number of organization agents
+T	Number of simulation time steps
+seeds	Number of random repetitions
+ba_m	Barabási-Albert network attachment parameter
+
+For quick debugging:
+
+simulation:
+  N: 50
+  T: 100
+  seeds: 3
+  ba_m: 3
+
+For final paper results:
+
+simulation:
+  N: 50
+  T: 500
+  seeds: 30
+  ba_m: 3
+Running the Experiments
+
+Activate the environment:
+
+source .venv/bin/activate
+
+Run each experiment separately:
+
+python -u -m sgb.experiments --experiment 1
+python -u -m sgb.experiments --experiment 2
+python -u -m sgb.experiments --experiment 3
+python -u -m sgb.experiments --experiment 4
+
+The -u flag is recommended because it prints progress immediately during long runs.
+
+Run all experiments at once:
+
+python -u -m sgb.experiments --experiment all
+
+For final runs, running experiments one by one is recommended.
+
+Generating Figures
+
+After Experiments 2, 3, and 4 are complete, generate figures:
+
+python -u -m sgb.visualize
+
+This creates:
+
+outputs/figures/figure2_gmi_time_series.png
+outputs/figures/figure3_threshold_tradeoff.png
+outputs/figures/figure4_pareto_front.png
+Output Files
+Raw Simulation Results
+outputs/raw/exp1_results.csv
+outputs/raw/exp1_summary_by_seed.csv
+outputs/raw/exp2_results.csv
+outputs/raw/exp2_summary_by_seed.csv
+outputs/raw/exp3_results.csv
+outputs/raw/exp4_results.csv
+Processed Tables
+outputs/tables/table2_framework_comparison.csv
+outputs/tables/table3_propagation_metrics.csv
+outputs/tables/table4_recommended_threshold.csv
+outputs/tables/table5_resilience_efficiency_summary.csv
+Figures
+outputs/figures/figure2_gmi_time_series.png
+outputs/figures/figure3_threshold_tradeoff.png
+outputs/figures/figure4_pareto_front.png
+Viewing Results
+
+Print all generated tables:
+
+python - << 'EOF'
+import pandas as pd
+
+tables = [
+    "outputs/tables/table2_framework_comparison.csv",
+    "outputs/tables/table3_propagation_metrics.csv",
+    "outputs/tables/table4_recommended_threshold.csv",
+    "outputs/tables/table5_resilience_efficiency_summary.csv",
+]
+
+for table in tables:
+    print("\n" + "=" * 80)
+    print(table)
+    print("=" * 80)
+    print(pd.read_csv(table))
+EOF
+
+Open generated figures on Linux:
+
+xdg-open outputs/figures/figure2_gmi_time_series.png
+xdg-open outputs/figures/figure3_threshold_tradeoff.png
+xdg-open outputs/figures/figure4_pareto_front.png
+
+Status
+
+This repository is a research prototype.
+
+Current version supports:
+
+synthetic organization generation,
+agent-based data exchange simulation,
+governance maturity scoring,
+framework comparison,
+security incident perturbation,
+regulatory threshold evaluation,
+data quality shock analysis,
+CSV output generation,
+and publication-ready figures.
