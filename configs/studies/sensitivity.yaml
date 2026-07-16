@@ -2,35 +2,641 @@ schema_version: 2
 config_kind: study
 study_type: sensitivity
 
+configuration:
+  status: candidate
+  description: >
+    Global sensitivity study covering the candidate constants identified
+    as P1-P21. P1-P14 and P21 are evaluated directly by this study.
+    P15-P20 are linked to the convergence and experiment studies already
+    implemented in the project.
+
 reference_config: configs/base.yaml
+dynamics_config: configs/dynamics.yaml
 
 parameters:
-  network.attachment_m:
-    - 2
-    - 3
-    - 5
+  direct_sensitivity_codes:
+    - P1
+    - P2
+    - P3
+    - P4
+    - P5
+    - P6
+    - P7
+    - P8
+    - P9
+    - P10
+    - P11
+    - P12
+    - P13
+    - P14
+    - P21
 
-  exchange.pareto_alpha:
-    - 1.5
-    - 2.1
-    - 2.5
-    - 3.0
+  linked_study_codes:
+    - P15
+    - P16
+    - P17
+    - P18
+    - P19
+    - P20
 
-  shock.scale:
-    - 0.5
-    - 1.0
-    - 1.5
+profiles:
+  smoke:
+    start_seed: 9000
+    seed_count: 2
+    population_size: 12
+    burn_in_steps: 50
+    observation_steps: 20
+    terminal_window: 10
 
-  metadata.catalog_freshness_window:
-    - 10
-    - 20
-    - 40
+  full:
+    start_seed: 9000
+    seed_count: 30
+    population_size: 50
+    burn_in_steps: 500
+    observation_steps: 100
+    terminal_window: 50
 
 analysis:
-  check_framework_ranking: true
-  check_threshold_recommendation: true
-  check_recovery_time: true
-  check_propagation_metrics: true
+  confidence_level: 0.95
+  framework_ranking_tolerance: 0.0005
+  maximum_absolute_egmi_difference: 0.02
+  maximum_threshold_difference: 0.10
+  minimum_ranking_match_fraction: 0.90
+  minimum_dimension_rank_correlation: 0.90
+  minimum_maturity_classification_agreement: 0.85
+
+threshold_scan:
+  coarse:
+    minimum: 0.0
+    maximum: 1.0
+    step: 0.10
+
+  refinement:
+    radius: 0.10
+    step: 0.01
+
+shock_defaults:
+  security_impact: 0.30
+  maximum_network_distance: 3
+  distance_decay: 0.50
+
+freshness_model:
+  baseline_window: 20
+  rationale: >
+    For P21, a catalog-freshness score observed at the baseline window
+    is transformed under an exponential update-age assumption:
+    F(K) = 1 - (1 - F(K0))^(K/K0).
+    This assumption must be stated in the methodology and treated as
+    part of the sensitivity analysis rather than an empirical fact.
+
+public_calibration:
+  P9_complete: false
+  note: >
+    Alternative organization-mix envelopes are tested here. Final P9
+    resolution still requires a documented public-source denominator
+    for NDEL-eligible ministries, state enterprises, and private entities.
+
+scenarios:
+  # P1 — Framework weighting schemes
+  - code: P1
+    name: equal_standard_dimensions
+    operation: framework_weights
+    value:
+      DBL:
+        D1: 0.20
+        D2: 0.20
+        D3: 0.20
+        D4: 0.20
+        D5: 0.20
+      DMM:
+        D1: 0.20
+        D2: 0.20
+        D3: 0.20
+        D4: 0.20
+        D5: 0.20
+      ISF:
+        D1: 0.18
+        D2: 0.18
+        D3: 0.18
+        D4: 0.18
+        D5: 0.18
+        SVC: 0.10
+
+  - code: P1
+    name: quality_heavy
+    operation: framework_weights
+    value:
+      DBL:
+        D1: 0.40
+        D2: 0.15
+        D3: 0.15
+        D4: 0.15
+        D5: 0.15
+      DMM:
+        D1: 0.40
+        D2: 0.15
+        D3: 0.15
+        D4: 0.15
+        D5: 0.15
+      ISF:
+        D1: 0.35
+        D2: 0.13
+        D3: 0.13
+        D4: 0.13
+        D5: 0.13
+        SVC: 0.13
+
+  - code: P1
+    name: security_heavy
+    operation: framework_weights
+    value:
+      DBL:
+        D1: 0.15
+        D2: 0.40
+        D3: 0.15
+        D4: 0.15
+        D5: 0.15
+      DMM:
+        D1: 0.15
+        D2: 0.40
+        D3: 0.15
+        D4: 0.15
+        D5: 0.15
+      ISF:
+        D1: 0.13
+        D2: 0.35
+        D3: 0.13
+        D4: 0.13
+        D5: 0.13
+        SVC: 0.13
+
+  # P2 — D1 subweights
+  - code: P2
+    name: D1_equal
+    operation: dimension_weights
+    value:
+      dimension: D1
+      weights:
+        completeness_ratio: 0.3333333333333333
+        duplicate_rate: 0.3333333333333333
+        schema_pass_rate: 0.3333333333333333
+
+  - code: P2
+    name: D1_completeness_heavy
+    operation: dimension_weights
+    value:
+      dimension: D1
+      weights:
+        completeness_ratio: 0.60
+        duplicate_rate: 0.20
+        schema_pass_rate: 0.20
+
+  - code: P2
+    name: D1_schema_heavy
+    operation: dimension_weights
+    value:
+      dimension: D1
+      weights:
+        completeness_ratio: 0.20
+        duplicate_rate: 0.20
+        schema_pass_rate: 0.60
+
+  # P3 — D2 subweights
+  - code: P3
+    name: D2_equal
+    operation: dimension_weights
+    value:
+      dimension: D2
+      weights:
+        encryption_coverage: 0.3333333333333333
+        normalized_breach_latency: 0.3333333333333333
+        policy_violation_rate: 0.3333333333333333
+
+  - code: P3
+    name: D2_encryption_heavy
+    operation: dimension_weights
+    value:
+      dimension: D2
+      weights:
+        encryption_coverage: 0.60
+        normalized_breach_latency: 0.20
+        policy_violation_rate: 0.20
+
+  - code: P3
+    name: D2_incident_heavy
+    operation: dimension_weights
+    value:
+      dimension: D2
+      weights:
+        encryption_coverage: 0.20
+        normalized_breach_latency: 0.40
+        policy_violation_rate: 0.40
+
+  # P4 — D3 subweights
+  - code: P4
+    name: D3_equal
+    operation: dimension_weights
+    value:
+      dimension: D3
+      weights:
+        lineage_rate: 0.3333333333333333
+        catalog_coverage: 0.3333333333333333
+        catalog_freshness: 0.3333333333333333
+
+  - code: P4
+    name: D3_lineage_heavy
+    operation: dimension_weights
+    value:
+      dimension: D3
+      weights:
+        lineage_rate: 0.60
+        catalog_coverage: 0.25
+        catalog_freshness: 0.15
+
+  - code: P4
+    name: D3_freshness_heavy
+    operation: dimension_weights
+    value:
+      dimension: D3
+      weights:
+        lineage_rate: 0.20
+        catalog_coverage: 0.20
+        catalog_freshness: 0.60
+
+  # P5 — D4 subweights
+  - code: P5
+    name: D4_equal
+    operation: dimension_weights
+    value:
+      dimension: D4
+      weights:
+        rule_pass_rate: 0.50
+        consent_propagation_rate: 0.50
+
+  - code: P5
+    name: D4_rule_heavy
+    operation: dimension_weights
+    value:
+      dimension: D4
+      weights:
+        rule_pass_rate: 0.75
+        consent_propagation_rate: 0.25
+
+  - code: P5
+    name: D4_consent_heavy
+    operation: dimension_weights
+    value:
+      dimension: D4
+      weights:
+        rule_pass_rate: 0.25
+        consent_propagation_rate: 0.75
+
+  # P6 — D5 subweights
+  - code: P6
+    name: D5_equal
+    operation: dimension_weights
+    value:
+      dimension: D5
+      weights:
+        schema_reconciliation_rate: 0.3333333333333333
+        api_adherence_rate: 0.3333333333333333
+        format_translation_rate: 0.3333333333333333
+
+  - code: P6
+    name: D5_reconciliation_heavy
+    operation: dimension_weights
+    value:
+      dimension: D5
+      weights:
+        schema_reconciliation_rate: 0.60
+        api_adherence_rate: 0.20
+        format_translation_rate: 0.20
+
+  - code: P6
+    name: D5_api_heavy
+    operation: dimension_weights
+    value:
+      dimension: D5
+      weights:
+        schema_reconciliation_rate: 0.20
+        api_adherence_rate: 0.60
+        format_translation_rate: 0.20
+
+  # P7 — SVC subweights
+  - code: P7
+    name: SVC_equal
+    operation: dimension_weights
+    value:
+      dimension: SVC
+      weights:
+        localization_compliance_rate: 0.3333333333333333
+        cross_border_flagging_rate: 0.3333333333333333
+        audit_trail_completeness: 0.3333333333333333
+
+  - code: P7
+    name: SVC_localization_heavy
+    operation: dimension_weights
+    value:
+      dimension: SVC
+      weights:
+        localization_compliance_rate: 0.60
+        cross_border_flagging_rate: 0.20
+        audit_trail_completeness: 0.20
+
+  - code: P7
+    name: SVC_audit_heavy
+    operation: dimension_weights
+    value:
+      dimension: SVC
+      weights:
+        localization_compliance_rate: 0.20
+        cross_border_flagging_rate: 0.20
+        audit_trail_completeness: 0.60
+
+  # P8 — Alternative ISF weighting
+  - code: P8
+    name: ISF_equal_six_dimensions
+    operation: framework_weights
+    value:
+      ISF:
+        D1: 0.16666666666666666
+        D2: 0.16666666666666666
+        D3: 0.16666666666666666
+        D4: 0.16666666666666666
+        D5: 0.16666666666666666
+        SVC: 0.16666666666666666
+
+  - code: P8
+    name: ISF_sovereignty_heavy
+    operation: framework_weights
+    value:
+      ISF:
+        D1: 0.14
+        D2: 0.14
+        D3: 0.14
+        D4: 0.14
+        D5: 0.14
+        SVC: 0.30
+
+  - code: P8
+    name: ISF_standard_dimensions_heavy
+    operation: framework_weights
+    value:
+      ISF:
+        D1: 0.18
+        D2: 0.18
+        D3: 0.18
+        D4: 0.18
+        D5: 0.18
+        SVC: 0.10
+
+  # P9 — Organization-mix envelopes.
+  # Values follow the organization order in base.yaml.
+  - code: P9
+    name: first_type_heavy
+    operation: organization_mix
+    value:
+      probabilities:
+        - 0.55
+        - 0.30
+        - 0.15
+
+  - code: P9
+    name: second_type_heavy
+    operation: organization_mix
+    value:
+      probabilities:
+        - 0.25
+        - 0.55
+        - 0.20
+
+  - code: P9
+    name: third_type_heavy
+    operation: organization_mix
+    value:
+      probabilities:
+        - 0.25
+        - 0.25
+        - 0.50
+
+  - code: P9
+    name: balanced_types
+    operation: organization_mix
+    value:
+      probabilities:
+        - 0.3333333333333333
+        - 0.3333333333333333
+        - 0.3333333333333333
+
+  # P10 — Beta-shape concentration while preserving every raw mean
+  - code: P10
+    name: diffuse_beta_shapes
+    operation: beta_concentration
+    value:
+      concentration: 4.0
+
+  - code: P10
+    name: moderate_beta_shapes
+    operation: beta_concentration
+    value:
+      concentration: 10.0
+
+  - code: P10
+    name: concentrated_beta_shapes
+    operation: beta_concentration
+    value:
+      concentration: 50.0
+
+  # P11 — Truncated Pareto alternatives
+  - code: P11
+    name: pareto_alpha_1_5
+    operation: exchange_distribution
+    value:
+      minimum_volume: 10
+      maximum_volume: 2000
+      pareto_alpha: 1.5
+
+  - code: P11
+    name: pareto_alpha_3_0
+    operation: exchange_distribution
+    value:
+      minimum_volume: 10
+      maximum_volume: 2000
+      pareto_alpha: 3.0
+
+  - code: P11
+    name: narrow_volume_bounds
+    operation: exchange_distribution
+    value:
+      minimum_volume: 10
+      maximum_volume: 500
+      pareto_alpha: 2.1
+
+  - code: P11
+    name: wide_volume_bounds
+    operation: exchange_distribution
+    value:
+      minimum_volume: 10
+      maximum_volume: 5000
+      pareto_alpha: 2.1
+
+  # P12 — Barabási-Albert attachment parameter
+  - code: P12
+    name: network_m_2
+    operation: network_attachment
+    value:
+      attachment_m: 2
+
+  - code: P12
+    name: network_m_3
+    operation: network_attachment
+    value:
+      attachment_m: 3
+
+  - code: P12
+    name: network_m_5
+    operation: network_attachment
+    value:
+      attachment_m: 5
+
+  # P13 — Alternative definitional partitions
+  - code: P13
+    name: equal_width
+    operation: maturity_cutoffs
+    value:
+      cutoffs:
+        - 0.20
+        - 0.40
+        - 0.60
+        - 0.80
+
+  - code: P13
+    name: lenient_partition
+    operation: maturity_cutoffs
+    value:
+      cutoffs:
+        - 0.15
+        - 0.35
+        - 0.55
+        - 0.75
+
+  - code: P13
+    name: strict_partition
+    operation: maturity_cutoffs
+    value:
+      cutoffs:
+        - 0.25
+        - 0.45
+        - 0.65
+        - 0.85
+
+  # P14 — ±50% shock-magnitude sweeps
+  - code: P14
+    name: security_minus_50
+    operation: shock_magnitude
+    value:
+      shock_type: security
+      impact: 0.15
+
+  - code: P14
+    name: security_baseline
+    operation: shock_magnitude
+    value:
+      shock_type: security
+      impact: 0.30
+
+  - code: P14
+    name: security_plus_50
+    operation: shock_magnitude
+    value:
+      shock_type: security
+      impact: 0.45
+
+  - code: P14
+    name: data_quality_minus_50
+    operation: shock_magnitude
+    value:
+      shock_type: data_quality
+      impact: 0.05
+
+  - code: P14
+    name: data_quality_baseline
+    operation: shock_magnitude
+    value:
+      shock_type: data_quality
+      impact: 0.10
+
+  - code: P14
+    name: data_quality_plus_50
+    operation: shock_magnitude
+    value:
+      shock_type: data_quality
+      impact: 0.15
+
+  - code: P14
+    name: regulatory_minus_50
+    operation: shock_magnitude
+    value:
+      shock_type: regulatory
+      impact: 0.05
+
+  - code: P14
+    name: regulatory_baseline
+    operation: shock_magnitude
+    value:
+      shock_type: regulatory
+      impact: 0.10
+
+  - code: P14
+    name: regulatory_plus_50
+    operation: shock_magnitude
+    value:
+      shock_type: regulatory
+      impact: 0.15
+
+  # P21 — Catalog-freshness window
+  - code: P21
+    name: freshness_K_10
+    operation: freshness_window
+    value:
+      window: 10
+
+  - code: P21
+    name: freshness_K_20
+    operation: freshness_window
+    value:
+      window: 20
+
+  - code: P21
+    name: freshness_K_40
+    operation: freshness_window
+    value:
+      window: 40
+
+linked_studies:
+  P15:
+    type: population_convergence
+    config: configs/studies/population_convergence.yaml
+
+  P16:
+    type: time_convergence
+    config: configs/studies/time_convergence.yaml
+
+  P17:
+    type: seed_convergence
+    config: configs/studies/seed_convergence.yaml
+
+  P18:
+    type: steady_state_shock_and_recovery
+    config: configs/experiments/experiment_2.yaml
+
+  P19:
+    type: full_range_threshold_scan
+    config: configs/experiments/experiment_3.yaml
+
+  P20:
+    type: maturity_endpoint_verification
+    config: configs/experiments/experiment_4.yaml
 
 outputs:
-  directory: outputs/sensitivity
+  directory: outputs/sensitivity/global
