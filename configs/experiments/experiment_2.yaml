@@ -1,0 +1,59 @@
+schema_version: 1
+config_kind: experiment
+experiment_id: 2
+experiment_name: security_propagation_and_recovery
+
+configuration:
+  status: candidate
+  description: >
+    Inject one framework-neutral network security incident only after
+    steady-state detection and measure propagation and recovery under
+    DBL, DMM, and ISF scoring views.
+
+reference_config: configs/base.yaml
+dynamics_config: configs/dynamics.yaml
+
+seed_plan:
+  start_seed: 6000
+  seed_count: 30
+
+simulation:
+  population_size: 50
+
+steady_state:
+  maximum_steps: 1000
+  rolling_window: 50
+  required_stable_windows: 3
+  minimum_step: 200
+  slope_tolerance: 0.0005
+  mean_difference_tolerance: 0.01
+  stabilization_buffer: 50
+  metrics:
+    - mean_operational_readiness
+    - D1
+    - D2
+    - D3
+    - D4
+    - D5
+    - SVC
+    - E_GMI_DBL
+    - E_GMI_DMM
+    - E_GMI_ISF
+
+shock:
+  type: security_incident
+  target_selection: highest_degree
+  impact: 0.30
+  maximum_network_distance: 3
+  distance_decay: 0.50
+
+recovery:
+  maximum_observation_steps: 300
+  recovery_tolerance: 0.01
+  required_consecutive_steps: 10
+
+analysis:
+  confidence_level: 0.95
+
+outputs:
+  directory: outputs/experiments/experiment_2

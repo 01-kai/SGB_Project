@@ -1,0 +1,55 @@
+schema_version: 1
+config_kind: experiment
+experiment_id: 4
+experiment_name: maturity_distribution_sweep
+
+configuration:
+  status: candidate
+  description: >
+    Sweep synthetic maturity from a verified low endpoint to a verified
+    high endpoint. Positive submetrics use the declared Beta distribution;
+    inverse submetrics use the reversed distribution. DBL, DMM, and ISF
+    score every generated population.
+
+reference_config: configs/base.yaml
+dynamics_config: configs/dynamics.yaml
+
+seed_plan:
+  start_seed: 8000
+  seed_count: 30
+
+simulation:
+  population_size: 50
+  horizon: 250
+  terminal_window: 50
+
+maturity_levels:
+  - name: low
+    alpha: 1.0
+    beta: 5.0
+
+  - name: low_moderate
+    alpha: 2.0
+    beta: 4.0
+
+  - name: neutral
+    alpha: 3.0
+    beta: 3.0
+
+  - name: high_moderate
+    alpha: 4.0
+    beta: 2.0
+
+  - name: high
+    alpha: 5.0
+    beta: 1.0
+
+endpoint_acceptance:
+  maximum_low_effective_mean: 0.20
+  minimum_high_effective_mean: 0.80
+
+analysis:
+  confidence_level: 0.95
+
+outputs:
+  directory: outputs/experiments/experiment_4
