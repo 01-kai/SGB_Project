@@ -1,0 +1,46 @@
+schema_version: 1
+config_kind: baseline_calibration
+
+configuration:
+  status: candidate
+  description: >
+    Baseline calibration study for verifying that the configured Beta
+    distributions generate organization-level governance dimensions in
+    the target interval. This study evaluates the initial population
+    before exchanges, perturbations, recovery, or framework scoring.
+
+reference_config: configs/base.yaml
+
+seed_plan:
+  start_seed: 1000
+  seed_count: 30
+
+population_size: 50
+
+dimensions:
+  - D1
+  - D2
+  - D3
+  - D4
+  - D5
+  - SVC
+
+table_1_dimensions:
+  - D1
+  - D2
+  - D3
+  - D4
+  - D5
+
+analysis:
+  confidence_level: 0.95
+
+acceptance:
+  target_minimum: 0.40
+  target_maximum: 0.50
+  maximum_dimension_mean_error: 0.01
+  maximum_submetric_mean_error: 0.02
+  require_dimension_ci_within_target: true
+
+outputs:
+  directory: outputs/calibration/baseline
