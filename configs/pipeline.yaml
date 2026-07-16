@@ -1,0 +1,191 @@
+schema_version: 1
+config_kind: pipeline
+
+project:
+  short_name: SGB
+  version: "0.2.0"
+
+execution:
+  stop_on_failure: true
+  log_path: outputs/final/pipeline_run.json
+
+stages:
+  - name: tests
+    description: Run the complete automated test suite.
+    dependencies: []
+    command:
+      - -m
+      - pytest
+      - -q
+    expected_artifacts: []
+
+  - name: baseline_calibration
+    description: Verify baseline Beta means and generate Table 1.
+    dependencies:
+      - tests
+    command:
+      - -m
+      - sgb.calibration
+      - --study
+      - configs/studies/baseline_calibration.yaml
+      - --fail-on-rejection
+    expected_artifacts:
+      - outputs/calibration/baseline/baseline_calibration_metadata.json
+      - outputs/calibration/baseline/table_1_baseline_dimensions.csv
+
+  - name: time_convergence
+    description: Determine the supported simulation horizon.
+    dependencies:
+      - tests
+      - baseline_calibration
+    command:
+      - -m
+      - sgb.convergence
+      - --study
+      - configs/studies/time_convergence.yaml
+    expected_artifacts:
+      - outputs/convergence/time/metadata.json
+      - outputs/convergence/time/metric_convergence.csv
+      - outputs/convergence/time/horizon_summary.csv
+
+  - name: seed_convergence
+    description: Determine the supported number of random seeds.
+    dependencies:
+      - tests
+      - baseline_calibration
+    command:
+      - -m
+      - sgb.convergence
+      - --study
+      - configs/studies/seed_convergence.yaml
+    expected_artifacts:
+      - outputs/convergence/seeds/metadata.json
+      - outputs/convergence/seeds/ci_summary.csv
+      - outputs/convergence/seeds/ranking_summary.csv
+
+  - name: population_convergence
+    description: Determine the supported synthetic population size.
+    dependencies:
+      - tests
+      - baseline_calibration
+    command:
+      - -m
+      - sgb.convergence
+      - --study
+      - configs/studies/population_convergence.yaml
+    expected_artifacts:
+      - outputs/convergence/population/metadata.json
+      - outputs/convergence/population/population_summary.csv
+      - outputs/convergence/population/population_acceptance.csv
+
+  - name: experiment_1
+    description: Compare DBL, DMM, and ISF on shared trajectories.
+    dependencies:
+      - time_convergence
+      - seed_convergence
+      - population_convergence
+    command:
+      - -m
+      - sgb.experiments
+      - --config
+      - configs/experiments/experiment_1.yaml
+    expected_artifacts:
+      - outputs/experiments/experiment_1/metadata.json
+      - outputs/experiments/experiment_1/framework_summary.csv
+      - outputs/experiments/experiment_1/maturity_distribution.csv
+
+  - name: experiment_2
+    description: Evaluate security propagation and post-shock recovery.
+    dependencies:
+      - time_convergence
+      - seed_convergence
+      - population_convergence
+    command:
+      - -m
+      - sgb.experiments
+      - --config
+      - configs/experiments/experiment_2.yaml
+    expected_artifacts:
+      - outputs/experiments/experiment_2/metadata.json
+      - outputs/experiments/experiment_2/framework_recovery_summary.csv
+      - outputs/experiments/experiment_2/propagation_results.csv
+
+  - name: experiment_3
+    description: Scan and refine maturity thresholds over the full range.
+    dependencies:
+      - time_convergence
+      - seed_convergence
+      - population_convergence
+    command:
+      - -m
+      - sgb.experiments
+      - --config
+      - configs/experiments/experiment_3.yaml
+    expected_artifacts:
+      - outputs/experiments/experiment_3/metadata.json
+      - outputs/experiments/experiment_3/threshold_recommendations.csv
+      - outputs/experiments/experiment_3/threshold_summary.csv
+
+  - name: experiment_4
+    description: Evaluate low-to-high maturity distributions.
+    dependencies:
+      - baseline_calibration
+      - time_convergence
+      - seed_convergence
+      - population_convergence
+    command:
+      - -m
+      - sgb.experiments
+      - --config
+      - configs/experiments/experiment_4.yaml
+    expected_artifacts:
+      - outputs/experiments/experiment_4/metadata.json
+      - outputs/experiments/experiment_4/level_summary.csv
+      - outputs/experiments/experiment_4/initial_dimension_summary.csv
+
+  - name: sensitivity_full
+    description: Run full direct sensitivity analysis for P1-P14 and P21.
+    dependencies:
+      - experiment_1
+      - experiment_2
+      - experiment_3
+      - experiment_4
+    command:
+      - -m
+      - sgb.sensitivity
+      - --study
+      - configs/studies/sensitivity.yaml
+      - --profile
+      - full
+      - --codes
+      - ALL
+    expected_artifacts:
+      - outputs/sensitivity/global/metadata.json
+      - outputs/sensitivity/global/coverage_matrix.csv
+      - outputs/sensitivity/global/stability_summary.csv
+      - outputs/sensitivity/global/shock_summary.csv
+
+  - name: final_reporting
+    description: Generate the final report and reproducibility manifest.
+    dependencies:
+      - baseline_calibration
+      - time_convergence
+      - seed_convergence
+      - population_convergence
+      - experiment_1
+      - experiment_2
+      - experiment_3
+      - experiment_4
+      - sensitivity_full
+    command:
+      - -m
+      - sgb.reporting
+      - --config
+      - configs/reporting.yaml
+    expected_artifacts:
+      - outputs/final/final_report.md
+      - outputs/final/artifact_index.csv
+      - outputs/final/decision_summary.csv
+      - outputs/final/parameter_coverage.csv
+      - outputs/final/reproducibility_manifest.csv
+      - outputs/final/reporting_metadata.json
