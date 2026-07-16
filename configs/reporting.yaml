@@ -1,0 +1,134 @@
+schema_version: 1
+config_kind: reporting
+
+project:
+  title: >
+    Synthetic Benchmarking of Data Governance Maturity Across Simulated
+    Multi-Organizational Ecosystems
+  short_name: SGB
+  version: "0.2.0"
+
+strict_required_inputs: true
+
+inputs:
+  baseline_table_1:
+    path: outputs/calibration/baseline/table_1_baseline_dimensions.csv
+    kind: csv
+    required: true
+    role: Baseline dimension calibration and paper Table 1
+
+  baseline_metadata:
+    path: outputs/calibration/baseline/baseline_calibration_metadata.json
+    kind: json
+    required: true
+    role: Baseline-calibration decision
+
+  time_convergence_metadata:
+    path: outputs/convergence/time/metadata.json
+    kind: json
+    required: true
+    role: Time-horizon convergence decision
+
+  seed_convergence_metadata:
+    path: outputs/convergence/seeds/metadata.json
+    kind: json
+    required: true
+    role: Seed-count convergence decision
+
+  population_convergence_metadata:
+    path: outputs/convergence/population/metadata.json
+    kind: json
+    required: true
+    role: Population-size convergence decision
+
+  experiment_1_metadata:
+    path: outputs/experiments/experiment_1/metadata.json
+    kind: json
+    required: true
+    role: Framework-comparison experiment decision
+
+  experiment_1_summary:
+    path: outputs/experiments/experiment_1/framework_summary.csv
+    kind: csv
+    required: true
+    role: Framework-comparison summary
+
+  experiment_2_metadata:
+    path: outputs/experiments/experiment_2/metadata.json
+    kind: json
+    required: true
+    role: Security propagation and recovery decision
+
+  experiment_2_summary:
+    path: outputs/experiments/experiment_2/framework_recovery_summary.csv
+    kind: csv
+    required: true
+    role: Security recovery summary
+
+  experiment_3_metadata:
+    path: outputs/experiments/experiment_3/metadata.json
+    kind: json
+    required: true
+    role: Maturity-threshold experiment decision
+
+  experiment_3_summary:
+    path: outputs/experiments/experiment_3/threshold_recommendations.csv
+    kind: csv
+    required: true
+    role: Recommended framework thresholds
+
+  experiment_4_metadata:
+    path: outputs/experiments/experiment_4/metadata.json
+    kind: json
+    required: true
+    role: Maturity-distribution endpoint decision
+
+  experiment_4_summary:
+    path: outputs/experiments/experiment_4/level_summary.csv
+    kind: csv
+    required: true
+    role: Maturity-distribution sweep summary
+
+  sensitivity_metadata:
+    path: outputs/sensitivity/global/metadata.json
+    kind: json
+    required: true
+    role: Global sensitivity decision
+
+  sensitivity_coverage:
+    path: outputs/sensitivity/global/coverage_matrix.csv
+    kind: csv
+    required: true
+    role: P1-P21 implementation and resolution matrix
+
+  sensitivity_stability:
+    path: outputs/sensitivity/global/stability_summary.csv
+    kind: csv
+    required: true
+    role: Sensitivity robustness decisions
+
+reproducibility:
+  hash_roots:
+    - configs
+    - sgb
+    - tests
+
+  hash_files:
+    - pyproject.toml
+    - requirements.txt
+
+  include_extensions:
+    - .py
+    - .yaml
+    - .yml
+    - .toml
+    - .txt
+
+outputs:
+  directory: outputs/final
+  report_markdown: final_report.md
+  artifact_index: artifact_index.csv
+  decision_summary: decision_summary.csv
+  parameter_coverage: parameter_coverage.csv
+  reproducibility_manifest: reproducibility_manifest.csv
+  metadata: reporting_metadata.json
