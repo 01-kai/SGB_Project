@@ -1,0 +1,36 @@
+schema_version: 2
+config_kind: study
+study_type: sensitivity
+
+reference_config: configs/base.yaml
+
+parameters:
+  network.attachment_m:
+    - 2
+    - 3
+    - 5
+
+  exchange.pareto_alpha:
+    - 1.5
+    - 2.1
+    - 2.5
+    - 3.0
+
+  shock.scale:
+    - 0.5
+    - 1.0
+    - 1.5
+
+  metadata.catalog_freshness_window:
+    - 10
+    - 20
+    - 40
+
+analysis:
+  check_framework_ranking: true
+  check_threshold_recommendation: true
+  check_recovery_time: true
+  check_propagation_metrics: true
+
+outputs:
+  directory: outputs/sensitivity

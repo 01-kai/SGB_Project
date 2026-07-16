@@ -1,0 +1,30 @@
+schema_version: 2
+config_kind: study
+study_type: population_convergence
+
+reference_config: configs/base.yaml
+
+candidate_population_sizes:
+  - 20
+  - 50
+  - 200
+
+metrics:
+  - E_GMI
+  - success_rate
+  - D1
+  - D2
+  - D3
+  - D4
+  - D5
+  - SVC
+  - recovery_time
+
+analysis:
+  check_framework_ranking: true
+  check_propagation_results: true
+  check_threshold_recommendation: true
+  material_difference_tolerance: 0.01
+
+outputs:
+  directory: outputs/convergence/population

@@ -1,0 +1,249 @@
+schema_version: 2
+config_kind: base
+
+configuration:
+  name: sgb-candidate-configuration
+  status: candidate
+  description: >
+    Candidate reference configuration for calibration, convergence,
+    sensitivity analysis, and final experiments. Candidate values must
+    not be described as validated until the relevant studies have been
+    completed.
+
+simulation:
+  population_size: 50
+  max_steps: 500
+  seed_count: 30
+
+network:
+  model: barabasi_albert
+  attachment_m: 3
+
+exchange:
+  volume_distribution: truncated_pareto
+  minimum_volume: 10
+  maximum_volume: 2000
+  pareto_alpha: 2.1
+
+population:
+  organization_type_distribution:
+    parameter_category: public_documented_source
+    status: candidate
+    rationale: >
+      Candidate organization-type proportions. These values must be
+      recalibrated using publicly available information about likely
+      NDEL participants.
+    probabilities:
+      government_ministry: 0.40
+      state_enterprise: 0.35
+      regulated_private_entity: 0.25
+
+baseline:
+  target_dimension_range:
+    minimum: 0.40
+    maximum: 0.50
+
+  initialization:
+    parameter_category: simulation_internal
+    status: candidate
+    rationale: >
+      Candidate Beta distributions selected to produce dimension-level
+      means near 0.45. Final parameters must be confirmed through the
+      baseline calibration procedure.
+
+    submetric_distributions:
+      completeness_ratio:
+        alpha: 9.0
+        beta: 11.0
+
+      duplicate_rate:
+        alpha: 11.0
+        beta: 9.0
+
+      schema_pass_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      encryption_coverage:
+        alpha: 9.0
+        beta: 11.0
+
+      normalized_breach_latency:
+        alpha: 11.0
+        beta: 9.0
+
+      policy_violation_rate:
+        alpha: 11.0
+        beta: 9.0
+
+      lineage_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      catalog_coverage:
+        alpha: 9.0
+        beta: 11.0
+
+      catalog_freshness:
+        alpha: 9.0
+        beta: 11.0
+
+      rule_pass_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      consent_propagation_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      schema_reconciliation_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      api_adherence_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      format_translation_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      localization_compliance_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      cross_border_flagging_rate:
+        alpha: 9.0
+        beta: 11.0
+
+      audit_trail_completeness:
+        alpha: 9.0
+        beta: 11.0
+
+metadata:
+  catalog_freshness_window:
+    value: 20
+    parameter_category: simulation_internal
+    status: candidate
+    rationale: >
+      Candidate Appendix A freshness window. It must be sensitivity-tested
+      at K values 10, 20, and 40.
+
+dimension_formulas:
+  D1:
+    name: data_quality
+    source: appendix_a
+    parameter_category: modeling_judgment
+    rationale: >
+      Candidate weighting of completeness, duplicate avoidance, and schema
+      validation. Alternative sub-weight schemes must be sensitivity-tested.
+    weights:
+      completeness_ratio: 0.40
+      duplicate_rate: 0.35
+      schema_pass_rate: 0.25
+
+  D2:
+    name: security_posture
+    source: appendix_a
+    parameter_category: modeling_judgment
+    rationale: >
+      Candidate weighting of encryption coverage, breach-response latency,
+      and policy-violation avoidance.
+    weights:
+      encryption_coverage: 0.40
+      normalized_breach_latency: 0.35
+      policy_violation_rate: 0.25
+
+  D3:
+    name: metadata_completeness
+    source: appendix_a
+    parameter_category: modeling_judgment
+    rationale: >
+      Candidate weighting of lineage completeness, catalog coverage, and
+      catalog freshness.
+    weights:
+      lineage_rate: 0.50
+      catalog_coverage: 0.30
+      catalog_freshness: 0.20
+
+  D4:
+    name: regulatory_compliance
+    source: appendix_a
+    parameter_category: modeling_judgment
+    rationale: >
+      Candidate weighting of regulatory-rule satisfaction and consent
+      propagation.
+    weights:
+      rule_pass_rate: 0.60
+      consent_propagation_rate: 0.40
+
+  D5:
+    name: interoperability
+    source: appendix_a
+    parameter_category: modeling_judgment
+    rationale: >
+      Candidate weighting of schema reconciliation, API adherence, and
+      format translation.
+    weights:
+      schema_reconciliation_rate: 0.40
+      api_adherence_rate: 0.35
+      format_translation_rate: 0.25
+
+  SVC:
+    name: sovereignty_compliance
+    source: appendix_c
+    parameter_category: modeling_judgment
+    rationale: >
+      Candidate sovereignty-compliance dimension introduced by this study.
+      Its definition and weights must be explicitly documented and tested.
+    weights:
+      localization_compliance_rate: 0.50
+      cross_border_flagging_rate: 0.30
+      audit_trail_completeness: 0.20
+
+frameworks:
+  DBL:
+    label: DAMA-DMBOK-like Baseline
+    parameter_category: modeling_judgment
+    status: candidate
+    rationale: >
+      Operational research weighting inspired by the paper's baseline
+      framework. It is not an official DAMA-DMBOK weighting.
+    weights:
+      D1: 0.25
+      D2: 0.20
+      D3: 0.20
+      D4: 0.20
+      D5: 0.15
+
+  DMM:
+    label: DMM-inspired Framework
+    parameter_category: modeling_judgment
+    status: candidate
+    rationale: >
+      DMM-inspired operational weighting used for simulation comparison.
+      These values are not official DMM-prescribed weights.
+    weights:
+      D1: 0.22
+      D2: 0.20
+      D3: 0.24
+      D4: 0.22
+      D5: 0.12
+
+  ISF:
+    label: Iran-Specific Framework
+    parameter_category: modeling_judgment
+    status: candidate
+    rationale: >
+      Candidate framework adding Sovereignty Compliance. Its weighting is
+      a design choice and must be tested against alternative ISF schemes.
+    weights:
+      D1: 0.20
+      D2: 0.20
+      D3: 0.20
+      D4: 0.20
+      D5: 0.10
+      SVC: 0.10
+
+outputs:
+  root_directory: outputs

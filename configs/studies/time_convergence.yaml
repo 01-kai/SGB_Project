@@ -1,0 +1,31 @@
+schema_version: 2
+config_kind: study
+study_type: time_convergence
+
+reference_config: configs/base.yaml
+
+maximum_horizon: 1000
+
+candidate_horizons:
+  - 250
+  - 500
+  - 1000
+
+metrics:
+  - E_GMI
+  - success_rate
+  - D1
+  - D2
+  - D3
+  - D4
+  - D5
+  - SVC
+
+detection:
+  rolling_window: 50
+  required_stable_windows: 3
+  slope_tolerance: 0.0001
+  mean_difference_tolerance: 0.005
+
+outputs:
+  directory: outputs/convergence/time

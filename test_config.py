@@ -1,1 +1,0 @@
-python -m sgb.experiments --experiment 1
