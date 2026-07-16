@@ -3,6 +3,10 @@ config_kind: study
 study_type: seed_convergence
 
 reference_config: configs/base.yaml
+dynamics_config: configs/dynamics.yaml
+
+seed_plan:
+  start_seed: 3000
 
 candidate_seed_counts:
   - 5
@@ -14,24 +18,30 @@ candidate_seed_counts:
   - 40
   - 50
 
+simulation:
+  population_size: 50
+  horizon: 1000
+  terminal_window: 100
+
 metrics:
-  - E_GMI
   - success_rate
+  - volume_success_rate
+  - mean_operational_readiness
   - D1
   - D2
   - D3
   - D4
   - D5
   - SVC
-  - recovery_time
+  - E_GMI_DBL
+  - E_GMI_DMM
+  - E_GMI_ISF
 
 analysis:
   confidence_level: 0.95
-  calculate_ci_width: true
-  calculate_relative_ci_width: true
-  check_framework_ranking: true
-  check_threshold_recommendation: true
-  diminishing_returns_tolerance: 0.05
+  maximum_relative_ci_width: 0.05
+  relative_ci_denominator_floor: 0.01
+  ranking_tolerance: 0.0005
 
 outputs:
   directory: outputs/convergence/seeds
