@@ -4,3 +4,13 @@ __pycache__/
 .vscode/
 .DS_Store
 outputs/**/*.tmp
+# Generated research artifacts
+outputs/
+outputs_*/
+
+# Local source and result archives
+*.zip
+*.tar.gz
+
+# Runtime logs
+*.log

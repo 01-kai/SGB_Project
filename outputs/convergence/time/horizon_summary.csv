@@ -1,4 +1,0 @@
-horizon,overall_convergence_step,required_observation_steps,observation_steps_after_convergence,accepted
-250,599,100,-349,False
-500,599,100,-99,False
-1000,599,100,401,True

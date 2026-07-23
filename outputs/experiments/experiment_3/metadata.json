@@ -1,8 +1,0 @@
-{
-  "coarse_full_range_scanned": true,
-  "experiment_id": 3,
-  "experiment_name": "maturity_threshold_selection",
-  "optimization_metric": "f1_score",
-  "passed": true,
-  "shared_events": true
-}

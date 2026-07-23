@@ -1,9 +1,0 @@
-candidate_seed_count,ranking,reference_ranking,matches_reference,all_metric_ci_widths_acceptable,accepted
-5,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-10,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-15,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-20,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-25,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-30,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-40,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-50,ISF>DBL>DMM,ISF>DBL>DMM,True,True,True

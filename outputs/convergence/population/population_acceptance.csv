@@ -1,4 +1,0 @@
-population_size,ranking,reference_ranking,matches_reference_ranking,all_metric_differences_acceptable,accepted
-20,ISF>DBL>DMM,ISF>DBL>DMM,True,False,False
-50,ISF>DBL>DMM,ISF>DBL>DMM,True,True,True
-200,ISF>DBL>DMM,ISF>DBL>DMM,True,True,True
