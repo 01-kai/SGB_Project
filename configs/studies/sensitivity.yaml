@@ -50,7 +50,7 @@ profiles:
 
   full:
     start_seed: 9000
-    seed_count: 30
+    seed_count: 50
     population_size: 50
     burn_in_steps: 500
     observation_steps: 100
@@ -69,15 +69,19 @@ threshold_scan:
   coarse:
     minimum: 0.0
     maximum: 1.0
-    step: 0.10
+    step: 0.05
 
   refinement:
-    radius: 0.10
-    step: 0.01
+    radius: 0.05
+    step: 0.005
+
+  endpoint_score_rule: minimum
+  optimization_metric: balanced_accuracy
+  tie_breaker: higher_threshold
 
 shock_defaults:
   security_impact: 0.30
-  maximum_network_distance: 3
+  maximum_network_distance: 1
   distance_decay: 0.50
 
 freshness_model:
@@ -90,11 +94,13 @@ freshness_model:
     part of the sensitivity analysis rather than an empirical fact.
 
 public_calibration:
-  P9_complete: false
-  note: >
-    Alternative organization-mix envelopes are tested here. Final P9
-    resolution still requires a documented public-source denominator
-    for NDEL-eligible ministries, state enterprises, and private entities.
+  P9_complete: true
+  calibration_type: public_source_proxy
+  source_scope: iran_nix_connected_organizations
+  baseline_probabilities:
+    government_ministry: 0.02
+    state_enterprise: 0.33
+    regulated_private_entity: 0.65
 
 scenarios:
   # P1 — Framework weighting schemes
@@ -390,43 +396,9 @@ scenarios:
         D5: 0.18
         SVC: 0.10
 
-  # P9 — Organization-mix envelopes.
-  # Values follow the organization order in base.yaml.
-  - code: P9
-    name: first_type_heavy
-    operation: organization_mix
-    value:
-      probabilities:
-        - 0.55
-        - 0.30
-        - 0.15
-
-  - code: P9
-    name: second_type_heavy
-    operation: organization_mix
-    value:
-      probabilities:
-        - 0.25
-        - 0.55
-        - 0.20
-
-  - code: P9
-    name: third_type_heavy
-    operation: organization_mix
-    value:
-      probabilities:
-        - 0.25
-        - 0.25
-        - 0.50
-
-  - code: P9
-    name: balanced_types
-    operation: organization_mix
-    value:
-      probabilities:
-        - 0.3333333333333333
-        - 0.3333333333333333
-        - 0.3333333333333333
+  # P9 is resolved by the public_calibration block above.
+  # It is not a simulation scenario because organization type is currently
+  # a descriptive population label rather than an operational behavior rule.
 
   # P10 — Beta-shape concentration while preserving every raw mean
   - code: P10

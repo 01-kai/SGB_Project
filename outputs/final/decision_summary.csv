@@ -1,0 +1,10 @@
+input_name,role,status,passed,decision
+baseline_metadata,Baseline-calibration decision,passed,True,Dimension acceptance passed: True; submetric acceptance passed: True
+time_convergence_metadata,Time-horizon convergence decision,passed,True,Recommended horizon: 1000
+seed_convergence_metadata,Seed-count convergence decision,passed,True,Recommended seed count: 50
+population_convergence_metadata,Population-size convergence decision,passed,True,Recommended population size: 50
+experiment_1_metadata,Framework-comparison experiment decision,passed,True,Framework ranking: ISF>DBL>DMM
+experiment_2_metadata,Security propagation and recovery decision,passed,True,All framework views recovered: True
+experiment_3_metadata,Maturity-threshold experiment decision,passed,True,"Full [0,1] threshold range scanned: True"
+experiment_4_metadata,Maturity-distribution endpoint decision,passed,True,Low endpoint passed: True; high endpoint passed: True
+sensitivity_metadata,Global sensitivity decision,not_passed,False,Simulation stability passed: False; P9 public calibration complete: True

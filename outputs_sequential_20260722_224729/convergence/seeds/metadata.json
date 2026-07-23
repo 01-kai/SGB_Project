@@ -1,0 +1,11 @@
+{
+  "horizon": 1000,
+  "maximum_seed_count": 50,
+  "passed": true,
+  "population_size": 50,
+  "recommended_seed_count": 50,
+  "reference_ranking": "ISF>DBL>DMM",
+  "start_seed": 3000,
+  "study_type": "seed_convergence",
+  "terminal_window": 100
+}

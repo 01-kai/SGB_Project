@@ -1,0 +1,8 @@
+{
+  "experiment_id": 1,
+  "experiment_name": "framework_comparison",
+  "overall_ranking": "ISF>DBL>DMM",
+  "passed": true,
+  "seed_count": 30,
+  "shared_trajectory": true
+}

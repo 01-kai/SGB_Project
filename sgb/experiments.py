@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tqdm.auto import tqdm
 
 import argparse
 import json
@@ -61,6 +62,54 @@ INVERSE_SUBMETRICS = {
     "normalized_breach_latency",
     "policy_violation_rate",
 }
+
+_PROGRESS_ENABLED = False
+
+
+def _progress_seeds(
+    config: Mapping[str, Any],
+    *,
+    description: str,
+) -> tqdm:
+    """Return a progress-enabled iterator over configured seeds."""
+
+    seeds = list(
+        _seeds(
+            config
+        )
+    )
+
+    return tqdm(
+        seeds,
+        total=len(
+            seeds
+        ),
+        desc=description,
+        unit="seed",
+        dynamic_ncols=True,
+        leave=True,
+        disable=not _PROGRESS_ENABLED,
+    )
+
+
+def _progress_steps(
+    count: int,
+    *,
+    description: str,
+) -> tqdm:
+    """Return a nested progress bar for simulation steps."""
+
+    return tqdm(
+        range(
+            count
+        ),
+        total=count,
+        desc=description,
+        unit="step",
+        dynamic_ncols=True,
+        leave=False,
+        disable=not _PROGRESS_ENABLED,
+    )
 
 
 class ExperimentConfigurationError(ValueError):
@@ -356,9 +405,19 @@ def validate_experiment_config(
             "maximum_observation_steps",
         )
 
+        recovery_fraction = _unit_number(
+            recovery,
+            "recovery_fraction",
+        )
+
+        if recovery_fraction <= 0.0:
+            raise ExperimentConfigurationError(
+                "recovery.recovery_fraction must be greater than zero."
+            )
+
         _unit_number(
             recovery,
-            "recovery_tolerance",
+            "minimum_absolute_tolerance",
         )
 
         _positive_integer(
@@ -428,14 +487,30 @@ def validate_experiment_config(
                 "endpoint_score_rule must be 'minimum'."
             )
 
-        if scan.get("optimization_metric") != "f1_score":
+        optimization_metric = scan.get(
+            "optimization_metric"
+        )
+
+        if optimization_metric not in {
+            "f1_score",
+            "balanced_accuracy",
+        }:
             raise ExperimentConfigurationError(
-                "optimization_metric must be 'f1_score'."
+                "optimization_metric must be 'f1_score' or "
+                "'balanced_accuracy'."
             )
 
-        if scan.get("tie_breaker") != "lower_threshold":
+        tie_breaker = scan.get(
+            "tie_breaker"
+        )
+
+        if tie_breaker not in {
+            "lower_threshold",
+            "higher_threshold",
+        }:
             raise ExperimentConfigurationError(
-                "tie_breaker must be 'lower_threshold'."
+                "tie_breaker must be 'lower_threshold' or "
+                "'higher_threshold'."
             )
 
     else:
@@ -626,8 +701,9 @@ def run_experiment_1(
         ]["labels"]
     )
 
-    for seed in _seeds(
-        experiment_config
+    for seed in _progress_seeds(
+        experiment_config,
+        description="Experiment 1",
     ):
         model, steady_state_step = (
             _create_and_stabilize_model(
@@ -639,8 +715,11 @@ def run_experiment_1(
             )
         )
 
-        for _ in range(
-            terminal_window
+        for _ in _progress_steps(
+            terminal_window,
+            description=(
+                f"Experiment 1 seed {seed}: terminal window"
+            ),
         ):
             model.step()
             model.event_records.clear()
@@ -876,9 +955,15 @@ def run_experiment_2(
         ]
     )
 
-    recovery_tolerance = float(
+    recovery_fraction = float(
         recovery_config[
-            "recovery_tolerance"
+            "recovery_fraction"
+        ]
+    )
+
+    minimum_absolute_tolerance = float(
+        recovery_config[
+            "minimum_absolute_tolerance"
         ]
     )
 
@@ -900,8 +985,9 @@ def run_experiment_2(
         dict[str, Any]
     ] = []
 
-    for seed in _seeds(
-        experiment_config
+    for seed in _progress_seeds(
+        experiment_config,
+        description="Experiment 2",
     ):
         model, steady_state_step = (
             _create_and_stabilize_model(
@@ -915,8 +1001,8 @@ def run_experiment_2(
             )
         )
 
-        pre_scores = _mean_framework_scores(
-            model,
+        pre_agent_scores = evaluate_agents(
+            model.agents.to_list(),
             definitions,
         )
 
@@ -954,10 +1040,81 @@ def run_experiment_2(
             ),
         )
 
-        post_scores = _mean_framework_scores(
-            model,
+        affected_uids = {
+            int(
+                record[
+                    "affected_uid"
+                ]
+            )
+            for record in shock_records
+        }
+
+        post_agent_scores = evaluate_agents(
+            model.agents.to_list(),
             definitions,
         )
+
+        pre_scores = (
+            _framework_means_from_scored_agents(
+                pre_agent_scores,
+                affected_uids,
+            )
+        )
+
+        post_scores = (
+            _framework_means_from_scored_agents(
+                post_agent_scores,
+                affected_uids,
+            )
+        )
+
+        global_pre_scores = (
+            _framework_means_from_scored_agents(
+                pre_agent_scores,
+                None,
+            )
+        )
+
+        global_post_scores = (
+            _framework_means_from_scored_agents(
+                post_agent_scores,
+                None,
+            )
+        )
+
+        recovery_targets: dict[
+            str,
+            float,
+        ] = {}
+
+        for framework in FRAMEWORKS:
+            immediate_loss = max(
+                0.0,
+                pre_scores[
+                    framework
+                ]
+                - post_scores[
+                    framework
+                ],
+            )
+
+            allowed_remaining_loss = max(
+                minimum_absolute_tolerance,
+                (
+                    1.0
+                    - recovery_fraction
+                )
+                * immediate_loss,
+            )
+
+            recovery_targets[
+                framework
+            ] = (
+                pre_scores[
+                    framework
+                ]
+                - allowed_remaining_loss
+            )
 
         recovery_times: dict[
             str,
@@ -981,8 +1138,18 @@ def run_experiment_2(
                     "E_GMI": post_scores[
                         framework
                     ],
+                    "global_E_GMI": (
+                        global_post_scores[
+                            framework
+                        ]
+                    ),
                     "pre_shock_E_GMI": (
                         pre_scores[
+                            framework
+                        ]
+                    ),
+                    "recovery_target_E_GMI": (
+                        recovery_targets[
                             framework
                         ]
                     ),
@@ -991,17 +1158,35 @@ def run_experiment_2(
 
         model.event_records.clear()
 
-        for recovery_step in range(
-            1,
-            maximum_recovery_steps + 1,
+        for recovery_index in _progress_steps(
+            maximum_recovery_steps,
+            description=(
+                f"Experiment 2 seed {seed}: recovery"
+            ),
         ):
+            recovery_step = (
+                recovery_index
+                + 1
+            )
             model.step()
             model.event_records.clear()
 
+            current_agent_scores = evaluate_agents(
+                model.agents.to_list(),
+                definitions,
+            )
+
             current_scores = (
-                _mean_framework_scores(
-                    model,
-                    definitions,
+                _framework_means_from_scored_agents(
+                    current_agent_scores,
+                    affected_uids,
+                )
+            )
+
+            current_global_scores = (
+                _framework_means_from_scored_agents(
+                    current_agent_scores,
+                    None,
                 )
             )
 
@@ -1018,8 +1203,18 @@ def run_experiment_2(
                         ),
                         "framework": framework,
                         "E_GMI": current,
+                        "global_E_GMI": (
+                            current_global_scores[
+                                framework
+                            ]
+                        ),
                         "pre_shock_E_GMI": (
                             pre_scores[
+                                framework
+                            ]
+                        ),
+                        "recovery_target_E_GMI": (
+                            recovery_targets[
                                 framework
                             ]
                         ),
@@ -1028,12 +1223,9 @@ def run_experiment_2(
 
                 recovered_now = (
                     current
-                    >= (
-                        pre_scores[
-                            framework
-                        ]
-                        - recovery_tolerance
-                    )
+                    >= recovery_targets[
+                        framework
+                    ]
                 )
 
                 stable_counts[
@@ -1099,6 +1291,34 @@ def run_experiment_2(
                         - post_scores[
                             framework
                         ]
+                    ),
+                    "global_pre_shock_E_GMI": (
+                        global_pre_scores[
+                            framework
+                        ]
+                    ),
+                    "global_post_shock_E_GMI": (
+                        global_post_scores[
+                            framework
+                        ]
+                    ),
+                    "global_immediate_loss": (
+                        global_pre_scores[
+                            framework
+                        ]
+                        - global_post_scores[
+                            framework
+                        ]
+                    ),
+                    "recovery_target_E_GMI": (
+                        recovery_targets[
+                            framework
+                        ]
+                    ),
+                    "affected_organizations": (
+                        len(
+                            affected_uids
+                        )
                     ),
                     "recovery_time": (
                         recovery_times[
@@ -1288,6 +1508,15 @@ def run_experiment_2(
             "framework_independent_dynamics": (
                 True
             ),
+            "recovery_scope": (
+                "shock_affected_organizations"
+            ),
+            "recovery_fraction": (
+                recovery_fraction
+            ),
+            "minimum_absolute_tolerance": (
+                minimum_absolute_tolerance
+            ),
             "all_framework_runs_recovered": (
                 all_recovered
             ),
@@ -1320,6 +1549,24 @@ def run_experiment_3(
     scan = experiment_config[
         "threshold_scan"
     ]
+
+    endpoint_score_rule = str(
+        scan[
+            "endpoint_score_rule"
+        ]
+    )
+
+    optimization_metric = str(
+        scan[
+            "optimization_metric"
+        ]
+    )
+
+    tie_breaker = str(
+        scan[
+            "tie_breaker"
+        ]
+    )
 
     coarse = scan[
         "coarse"
@@ -1354,8 +1601,9 @@ def run_experiment_3(
         dict[str, Any]
     ] = []
 
-    for seed in _seeds(
-        experiment_config
+    for seed in _progress_seeds(
+        experiment_config,
+        description="Experiment 3",
     ):
         model, steady_state_step = (
             _create_and_stabilize_model(
@@ -1369,30 +1617,13 @@ def run_experiment_3(
             )
         )
 
-        agent_scores = evaluate_agents(
-            model.agents.to_list(),
-            definitions,
-        )
-
-        score_maps = {
-            framework: dict(
-                zip(
-                    agent_scores[
-                        "uid"
-                    ].astype(int),
-                    agent_scores[
-                        f"GMI_{framework}"
-                    ].astype(float),
-                    strict=True,
-                )
-            )
-            for framework in FRAMEWORKS
-        }
-
         model.event_records.clear()
 
-        for _ in range(
-            observation_steps
+        for _ in _progress_steps(
+            observation_steps,
+            description=(
+                f"Experiment 3 seed {seed}: event observation"
+            ),
         ):
             model.step()
 
@@ -1426,25 +1657,18 @@ def run_experiment_3(
         )
 
         for framework in FRAMEWORKS:
-            endpoint_scores = np.minimum(
-                events[
-                    "sender_uid"
-                ].map(
-                    score_maps[
-                        framework
-                    ]
-                ).to_numpy(
-                    dtype=float
-                ),
-                events[
-                    "receiver_uid"
-                ].map(
-                    score_maps[
-                        framework
-                    ]
-                ).to_numpy(
-                    dtype=float
-                ),
+            endpoint_scores = (
+                _event_endpoint_scores(
+                    events=events,
+                    definition=(
+                        definitions[
+                            framework
+                        ]
+                    ),
+                    rule=(
+                        endpoint_score_rule
+                    ),
+                )
             )
 
             outcomes = events[
@@ -1476,7 +1700,11 @@ def run_experiment_3(
             ]
 
             coarse_best = _select_threshold(
-                coarse_results
+                coarse_results,
+                optimization_metric=(
+                    optimization_metric
+                ),
+                tie_breaker=tie_breaker,
             )
 
             refined_minimum = max(
@@ -1652,14 +1880,28 @@ def run_experiment_3(
             == framework
         ].copy()
 
+        primary_column = (
+            f"{optimization_metric}_mean"
+        )
+
+        secondary_column = (
+            "balanced_accuracy_mean"
+            if optimization_metric
+            == "f1_score"
+            else "f1_score_mean"
+        )
+
         subset = subset.sort_values(
             [
-                "f1_score_mean",
+                primary_column,
+                secondary_column,
                 "threshold",
             ],
             ascending=[
                 False,
-                True,
+                False,
+                tie_breaker
+                == "lower_threshold",
             ],
         )
 
@@ -1740,8 +1982,12 @@ def run_experiment_3(
             ),
             "shared_events": True,
             "optimization_metric": (
-                "f1_score"
+                optimization_metric
             ),
+            "endpoint_score_rule": (
+                endpoint_score_rule
+            ),
+            "tie_breaker": tie_breaker,
             "passed": True,
         },
     )
@@ -1889,8 +2135,11 @@ def run_experiment_4(
             level_config
         )
 
-        for seed in _seeds(
-            experiment_config
+        for seed in _progress_seeds(
+            experiment_config,
+            description=(
+                f"Experiment 4 [{level_name}]"
+            ),
         ):
             model = _create_model(
                 base_config=level_config,
@@ -1929,8 +2178,12 @@ def run_experiment_4(
                     }
                 )
 
-            for _ in range(
-                horizon
+            for _ in _progress_steps(
+                horizon,
+                description=(
+                    f"Experiment 4 [{level_name}] "
+                    f"seed {seed}"
+                ),
             ):
                 model.step()
                 model.event_records.clear()
@@ -2320,8 +2573,11 @@ def _create_and_stabilize_model(
         ]
     )
 
-    for _ in range(
-        maximum_steps
+    for _ in _progress_steps(
+        maximum_steps,
+        description=(
+            f"Seed {seed}: steady-state search"
+        ),
     ):
         model.step()
         model.event_records.clear()
@@ -2397,8 +2653,11 @@ def _create_and_stabilize_model(
                 for result in results
             )
 
-            for _ in range(
-                stabilization_buffer
+            for _ in _progress_steps(
+                stabilization_buffer,
+                description=(
+                    f"Seed {seed}: stabilization buffer"
+                ),
             ):
                 model.step()
                 model.event_records.clear()
@@ -2478,14 +2737,111 @@ def _mean_framework_scores(
         definitions,
     )
 
+    return _framework_means_from_scored_agents(
+        scored_agents,
+        None,
+    )
+
+
+def _framework_means_from_scored_agents(
+    scored_agents: pd.DataFrame,
+    uids: set[int] | None,
+) -> dict[str, float]:
+    """Return framework means for all agents or one affected subset."""
+
+    if uids is None:
+        subset = scored_agents
+    else:
+        subset = scored_agents.loc[
+            scored_agents[
+                "uid"
+            ].astype(int).isin(
+                sorted(
+                    uids
+                )
+            )
+        ]
+
+    if subset.empty:
+        raise ExperimentError(
+            "Framework mean calculation received an empty agent subset."
+        )
+
     return {
         framework: float(
-            scored_agents[
+            subset[
                 f"GMI_{framework}"
             ].mean()
         )
         for framework in FRAMEWORKS
     }
+
+
+def _event_endpoint_scores(
+    *,
+    events: pd.DataFrame,
+    definition: Any,
+    rule: str,
+) -> np.ndarray:
+    """Calculate event-time framework scores from pre-outcome dimensions."""
+
+    if rule != "minimum":
+        raise ExperimentConfigurationError(
+            "Only the minimum endpoint-score rule is supported."
+        )
+
+    sender_scores = np.zeros(
+        len(events),
+        dtype=float,
+    )
+
+    receiver_scores = np.zeros(
+        len(events),
+        dtype=float,
+    )
+
+    for dimension, weight in (
+        definition.weights.items()
+    ):
+        sender_column = (
+            f"sender_{dimension}"
+        )
+        receiver_column = (
+            f"receiver_{dimension}"
+        )
+
+        for column in {
+            sender_column,
+            receiver_column,
+        }:
+            if column not in events.columns:
+                raise ExperimentError(
+                    "Exchange events are missing event-time "
+                    f"dimension column {column!r}."
+                )
+
+        sender_scores += (
+            float(weight)
+            * events[
+                sender_column
+            ].to_numpy(
+                dtype=float
+            )
+        )
+
+        receiver_scores += (
+            float(weight)
+            * events[
+                receiver_column
+            ].to_numpy(
+                dtype=float
+            )
+        )
+
+    return np.minimum(
+        sender_scores,
+        receiver_scores,
+    )
 
 
 def _classification_metrics(
@@ -2626,26 +2982,58 @@ def _select_threshold(
     rows: Sequence[
         Mapping[str, Any]
     ],
+    *,
+    optimization_metric: str,
+    tie_breaker: str,
 ) -> float:
     if not rows:
         raise ExperimentError(
             "Threshold result collection is empty."
         )
 
+    if optimization_metric not in {
+        "f1_score",
+        "balanced_accuracy",
+    }:
+        raise ExperimentConfigurationError(
+            "Unsupported threshold optimization metric."
+        )
+
+    if tie_breaker not in {
+        "lower_threshold",
+        "higher_threshold",
+    }:
+        raise ExperimentConfigurationError(
+            "Unsupported threshold tie breaker."
+        )
+
+    secondary_metric = (
+        "balanced_accuracy"
+        if optimization_metric == "f1_score"
+        else "f1_score"
+    )
+
+    threshold_direction = (
+        1.0
+        if tie_breaker == "lower_threshold"
+        else -1.0
+    )
+
     selected = sorted(
         rows,
         key=lambda row: (
             -float(
                 row[
-                    "f1_score"
+                    optimization_metric
                 ]
             ),
             -float(
                 row[
-                    "balanced_accuracy"
+                    secondary_metric
                 ]
             ),
-            float(
+            threshold_direction
+            * float(
                 row[
                     "threshold"
                 ]
@@ -3330,6 +3718,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
     )
 
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help=(
+            "Disable experiment progress bars. "
+            "Useful for automated or redirected runs."
+        ),
+    )
     return parser
 
 
@@ -3340,6 +3736,12 @@ def main(
         argv
     )
 
+    global _PROGRESS_ENABLED
+
+    _PROGRESS_ENABLED = (
+        not arguments.no_progress
+    )
+    
     try:
         experiment_config = (
             load_experiment_config(

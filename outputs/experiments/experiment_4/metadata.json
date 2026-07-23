@@ -1,0 +1,10 @@
+{
+  "all_frameworks_evaluated": true,
+  "experiment_id": 4,
+  "experiment_name": "maturity_distribution_sweep",
+  "high_endpoint_mean": 0.8333333333333334,
+  "high_endpoint_passed": true,
+  "low_endpoint_mean": 0.16666666666666666,
+  "low_endpoint_passed": true,
+  "passed": true
+}

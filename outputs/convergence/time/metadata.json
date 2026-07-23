@@ -1,0 +1,10 @@
+{
+  "all_metrics_converged": true,
+  "maximum_horizon": 1000,
+  "overall_convergence_step": 599,
+  "passed": true,
+  "population_size": 50,
+  "recommended_horizon": 1000,
+  "seed_count": 30,
+  "study_type": "time_convergence"
+}

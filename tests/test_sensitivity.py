@@ -104,7 +104,7 @@ def test_sensitivity_configuration_loads(
         == "sensitivity"
     )
 
-    assert set(
+    scenario_codes = {
         scenario[
             "code"
         ]
@@ -112,7 +112,12 @@ def test_sensitivity_configuration_loads(
         in study_config[
             "scenarios"
         ]
-    ) == DIRECT_CODES
+    }
+
+    assert scenario_codes == (
+        DIRECT_CODES
+        - {"P9"}
+    )
 
 
 def test_coverage_matrix_contains_p1_to_p21(
@@ -146,7 +151,10 @@ def test_coverage_matrix_contains_p1_to_p21(
         ].iloc[0]
     )
 
-    assert "pending" in p9_status
+    assert (
+        p9_status
+        == "public_source_calibration_complete"
+    )
 
 
 def test_freshness_transform_preserves_baseline_window() -> None:

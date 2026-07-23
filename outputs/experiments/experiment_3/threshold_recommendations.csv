@@ -1,0 +1,4 @@
+framework,recommended_threshold,mean_f1_score,mean_balanced_accuracy,mean_event_coverage,mean_eligible_success_rate
+DBL,0.0,0.23959829323545154,0.5,1.0,0.1361133333333333
+DMM,0.0,0.23959829323545154,0.5,1.0,0.1361133333333333
+ISF,0.0,0.23959829323545154,0.5,1.0,0.1361133333333333

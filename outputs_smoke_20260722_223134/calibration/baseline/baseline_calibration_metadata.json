@@ -1,0 +1,15 @@
+{
+  "confidence_level": 0.95,
+  "dimension_acceptance_passed": true,
+  "maximum_dimension_mean_error": 0.01,
+  "maximum_submetric_mean_error": 0.02,
+  "passed": true,
+  "population_size": 50,
+  "seed_count": 30,
+  "start_seed": 1000,
+  "status": "candidate",
+  "study": "baseline_calibration",
+  "submetric_acceptance_passed": true,
+  "target_maximum": 0.5,
+  "target_minimum": 0.4
+}

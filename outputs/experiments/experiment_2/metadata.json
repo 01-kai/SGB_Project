@@ -1,0 +1,8 @@
+{
+  "all_framework_runs_recovered": true,
+  "experiment_id": 2,
+  "experiment_name": "security_propagation_and_recovery",
+  "framework_independent_dynamics": true,
+  "passed": true,
+  "shared_shock": true
+}

@@ -140,10 +140,10 @@ At each simulation step:
 
 1. an organization selects an exchange partner,
 2. an exchange volume is sampled,
-3. exchange readiness is calculated,
+3. exchange readiness is calculated using the less-ready endpoint as the bottleneck,
 4. the exchange succeeds or fails,
-5. organizational submetrics are updated,
-6. recovery dynamics are applied,
+5. all exchange outcomes update organizational submetrics,
+6. every organization receives one framework-neutral recovery update toward its own sampled reference profile,
 7. and system-level metrics are recorded.
 
 Exchange volumes are sampled from a **bounded Pareto Type I distribution**, providing a heavy-tailed distribution while enforcing configurable lower and upper limits.
@@ -182,7 +182,7 @@ SGB implements four primary experiments.
 | ------------ | --------------------------------------------------------------- | ---------------------------------------------------------- |
 | Experiment 1 | Compare DBL, DMM, and ISF on shared trajectories                | Framework scores, rankings, confidence intervals           |
 | Experiment 2 | Inject a security incident and measure propagation and recovery | Immediate loss, affected organizations, recovery time      |
-| Experiment 3 | Evaluate governance maturity thresholds                         | Precision, recall, specificity, F1, recommended thresholds |
+| Experiment 3 | Evaluate governance maturity thresholds                         | Balanced accuracy, F1, coverage, recommended thresholds |
 | Experiment 4 | Evaluate low-to-high maturity distributions                     | Framework response across maturity regimes                 |
 
 ### Experiment 1 — Framework Comparison
@@ -205,7 +205,7 @@ python -m sgb.experiments \
 
 ### Experiment 3 — Threshold Selection
 
-Scans the complete maturity threshold interval from `0.0` to `1.0`, followed by local refinement.
+Scans the complete maturity threshold interval from `0.0` to `1.0`, followed by local refinement. Endpoint scores are calculated from the pre-outcome dimensions recorded for each exchange event, and the default selection criterion is balanced accuracy.
 
 ```bash
 python -m sgb.experiments \
@@ -582,11 +582,15 @@ The current implementation includes:
 * reproducibility reporting,
 * and end-to-end pipeline orchestration.
 
-### Pending calibration task
+### P9 public-source calibration
 
-The organization-type distribution sensitivity study is implemented, but final organization proportions still require calibration against documented public data.
+The baseline organization-type mix is configured as a documented Iranian public-source proxy:
 
-This issue is tracked as **P9** and should remain reported as pending until a defensible public denominator and classification method are established.
+* government ministries: `0.02`,
+* state enterprises: `0.33`,
+* regulated private entities: `0.65`.
+
+P9 is treated as a public calibration item rather than a simulation sensitivity scenario because organization type is currently a descriptive population label and does not impose organization-type-specific operational behavior.
 
 ---
 
@@ -603,7 +607,7 @@ Its outputs should be interpreted with the following limitations:
 * network topology is an approximation,
 * perturbation effects depend on configured assumptions,
 * statistical stability does not establish construct validity,
-* and external calibration is still required for organization-type proportions.
+* the P9 composition is a public-source proxy rather than a complete census of all eligible NIX/NDEL participants.
 
 ---
 

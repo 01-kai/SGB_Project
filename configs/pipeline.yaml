@@ -3,10 +3,11 @@ config_kind: pipeline
 
 project:
   short_name: SGB
-  version: "0.2.0"
+  version: "0.3.0"
 
 execution:
   stop_on_failure: true
+  stream_output: true
   log_path: outputs/final/pipeline_run.json
 
 stages:

@@ -71,6 +71,15 @@ class OrganizationAgent(mesa.Agent):
             submetrics_by_dimension
         )
 
+        # Preserve the organization's sampled pre-simulation operating
+        # profile. Neutral recovery returns an organization toward its own
+        # reference state rather than forcing every organization toward the
+        # same population mean. This retains cross-sectional heterogeneity,
+        # which is required for meaningful ranking and threshold analyses.
+        self._baseline_submetrics = deepcopy(
+            self._submetrics
+        )
+
         self._dimensions: dict[str, float] = {}
 
         self.recompute_dimensions()
@@ -85,6 +94,16 @@ class OrganizationAgent(mesa.Agent):
         """
 
         return deepcopy(self._submetrics)
+
+    @property
+    def baseline_submetrics(
+        self,
+    ) -> dict[str, dict[str, float]]:
+        """Return the immutable sampled reference profile for recovery."""
+
+        return deepcopy(
+            self._baseline_submetrics
+        )
 
     @property
     def dimensions(self) -> dict[str, float]:

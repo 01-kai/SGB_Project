@@ -742,6 +742,55 @@ def test_sensitivity_public_calibration_is_pending(
     )
 
 
+def test_completed_p9_uses_proxy_limitation_text(
+    tmp_path: Path,
+) -> None:
+    config = create_synthetic_project(
+        tmp_path
+    )
+
+    metadata_path = (
+        tmp_path
+        / config[
+            "inputs"
+        ][
+            "sensitivity_metadata"
+        ]["path"]
+    )
+
+    metadata = json.loads(
+        metadata_path.read_text(
+            encoding="utf-8"
+        )
+    )
+
+    metadata[
+        "P9_public_calibration_complete"
+    ] = True
+
+    metadata_path.write_text(
+        json.dumps(
+            metadata
+        ),
+        encoding="utf-8",
+    )
+
+    result = build_final_report(
+        config,
+        project_root=tmp_path,
+    )
+
+    assert (
+        "P9 uses a documented Iranian public-source proxy"
+        in result.report_markdown
+    )
+
+    assert (
+        "P9 remains incomplete"
+        not in result.report_markdown
+    )
+
+
 def test_missing_required_input_raises_in_strict_mode(
     tmp_path: Path,
 ) -> None:
