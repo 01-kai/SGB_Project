@@ -1224,6 +1224,53 @@ def _build_markdown_report(
         "baseline_table_1"
     )
 
+    sensitivity_metadata = loaded_inputs.get(
+        "sensitivity_metadata"
+    )
+
+    p9_complete = bool(
+        isinstance(
+            sensitivity_metadata,
+            Mapping,
+        )
+        and sensitivity_metadata.get(
+            "P9_public_calibration_complete"
+        )
+        is True
+    )
+
+    limitations = [
+        (
+            "- Framework and dimension weights remain modeling "
+            "choices and must be interpreted through the sensitivity "
+            "results rather than as empirically estimated coefficients."
+        ),
+        (
+            "- Equal-width maturity categories are definitional "
+            "partitions rather than externally validated maturity "
+            "boundaries."
+        ),
+    ]
+
+    if p9_complete:
+        limitations.append(
+            "- P9 uses a documented Iranian public-source proxy for "
+            "NIX-connected organization types; it is not a complete "
+            "census of all eligible organizations."
+        )
+    else:
+        limitations.append(
+            "- P9 remains incomplete until organization-type "
+            "proportions are calibrated against a documented public "
+            "source and denominator."
+        )
+
+    limitations.append(
+        "- Synthetic results demonstrate computational behavior and "
+        "robustness; they do not independently establish real-world "
+        "causal validity."
+    )
+
     sections.extend(
         [
             "## 3. Baseline Calibration",
@@ -1339,26 +1386,7 @@ def _build_markdown_report(
             "",
             "## 7. Remaining Limitations",
             "",
-            (
-                "- Framework and dimension weights remain modeling "
-                "choices and must be interpreted through the sensitivity "
-                "results rather than as empirically estimated coefficients."
-            ),
-            (
-                "- Equal-width maturity categories are definitional "
-                "partitions rather than externally validated maturity "
-                "boundaries."
-            ),
-            (
-                "- P9 remains incomplete until organization-type "
-                "proportions are calibrated against a documented public "
-                "source and denominator."
-            ),
-            (
-                "- Synthetic results demonstrate computational behavior "
-                "and robustness; they do not independently establish "
-                "real-world causal validity."
-            ),
+            *limitations,
             "",
         ]
     )

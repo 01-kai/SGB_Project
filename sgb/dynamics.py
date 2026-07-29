@@ -415,14 +415,18 @@ class NeutralOperationalDynamics:
         agent: OrganizationAgent,
     ) -> None:
         """
-        Move each operational submetric toward its baseline mean.
+        Move each operational submetric toward the organization's sampled
+        reference state.
 
-        For a Beta(alpha, beta) distribution, the target mean is:
-
-            alpha / (alpha + beta)
+        The population-level Beta means remain available in
+        ``baseline_targets`` for calibration and diagnostics, but recovery
+        must not collapse heterogeneous organizations onto one common mean.
         """
 
         current_state = agent.submetrics
+        reference_state = (
+            agent.baseline_submetrics
+        )
 
         recovery_changes: dict[
             str,
@@ -440,9 +444,9 @@ class NeutralOperationalDynamics:
                     dimension
                 ].items()
             ):
-                target = self.baseline_targets[
-                    submetric
-                ]
+                target = reference_state[
+                    dimension
+                ][submetric]
 
                 gap = target - current_value
 

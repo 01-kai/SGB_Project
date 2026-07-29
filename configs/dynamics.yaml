@@ -32,7 +32,7 @@ success:
       format_translation_rate: 1.0
 
 failure:
-  magnitude: 0.012
+  magnitude: 0.003
   rationale: >
     Failed exchanges affect the operational submetrics associated
     with the observed failure category. The rules do not depend on
@@ -64,8 +64,8 @@ failure:
         consent_propagation_rate: -1.0
 
 recovery:
-  gap_fraction_per_step: 0.02
-  maximum_adjustment_per_step: 0.002
+  gap_fraction_per_step: 0.05
+  maximum_adjustment_per_step: 0.005
   rationale: >
     Each submetric gradually moves toward the mean of its configured
     baseline Beta distribution. Recovery is framework-independent.

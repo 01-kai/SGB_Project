@@ -254,7 +254,11 @@ def test_reduced_experiment_2(
 
     config[
         "recovery"
-    ]["recovery_tolerance"] = 1.0
+    ]["recovery_fraction"] = 0.50
+
+    config[
+        "recovery"
+    ]["minimum_absolute_tolerance"] = 0.05
 
     relaxed_steady_state(
         config
@@ -285,6 +289,10 @@ def test_reduced_experiment_2(
     assert result.metadata[
         "shared_shock"
     ] is True
+
+    assert result.metadata[
+        "recovery_scope"
+    ] == "shock_affected_organizations"
 
 
 def test_reduced_experiment_3(
@@ -341,6 +349,18 @@ def test_reduced_experiment_3(
     assert result.metadata[
         "coarse_full_range_scanned"
     ] is True
+
+    assert result.metadata[
+        "optimization_metric"
+    ] == "balanced_accuracy"
+
+    assert recommendations[
+        "recommended_threshold"
+    ].between(
+        0.0,
+        1.0,
+        inclusive="neither",
+    ).all()
 
     threshold_results = result.tables[
         "seed_threshold_results"

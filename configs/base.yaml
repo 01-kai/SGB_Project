@@ -13,7 +13,7 @@ configuration:
 simulation:
   population_size: 50
   max_steps: 500
-  seed_count: 30
+  seed_count: 50
 
 network:
   model: barabasi_albert
@@ -28,15 +28,15 @@ exchange:
 population:
   organization_type_distribution:
     parameter_category: public_documented_source
-    status: candidate
+    status: final
     rationale: >
-      Candidate organization-type proportions. These values must be
-      recalibrated using publicly available information about likely
-      NDEL participants.
+      Public-source proxy for the approximate composition of Iranian
+      NIX/NDEL-connected organization types. The mix is descriptive in the
+      current model and does not impose organization-type-specific behavior.
     probabilities:
-      government_ministry: 0.40
-      state_enterprise: 0.35
-      regulated_private_entity: 0.25
+      government_ministry: 0.02
+      state_enterprise: 0.33
+      regulated_private_entity: 0.65
 
 baseline:
   target_dimension_range:

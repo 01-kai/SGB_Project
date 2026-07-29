@@ -41,6 +41,7 @@ class RecordingDynamics:
     def __init__(self) -> None:
         self.outcome_count = 0
         self.recovery_count = 0
+        self.calls: list[str] = []
 
     def apply_exchange_outcome(
         self,
@@ -50,6 +51,9 @@ class RecordingDynamics:
         event: dict[str, Any],
     ) -> None:
         self.outcome_count += 1
+        self.calls.append(
+            "outcome"
+        )
 
     def recover_agent(
         self,
@@ -57,6 +61,9 @@ class RecordingDynamics:
         agent: Any,
     ) -> None:
         self.recovery_count += 1
+        self.calls.append(
+            "recovery"
+        )
 
 
 def test_model_creates_expected_agents_and_network(
@@ -260,6 +267,28 @@ def test_event_records_have_valid_values(
         set(FAILURE_REASONS)
     )
 
+    for dimension in {
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "SVC",
+    }:
+        assert events[
+            f"sender_{dimension}"
+        ].between(
+            0.0,
+            1.0,
+        ).all()
+
+        assert events[
+            f"receiver_{dimension}"
+        ].between(
+            0.0,
+            1.0,
+        ).all()
+
 
 def test_failure_probabilities_sum_to_one(
     small_config: dict[str, Any],
@@ -288,6 +317,32 @@ def test_failure_probabilities_sum_to_one(
     assert sum(
         probabilities.values()
     ) == pytest.approx(1.0)
+
+
+def test_pair_success_probability_uses_bottleneck_readiness(
+    small_config: dict[str, Any],
+) -> None:
+    model = SGBModel(
+        config=small_config,
+        seed=42,
+    )
+
+    sender = model.get_agent(0)
+    receiver = model.get_agent(1)
+
+    assert model.pair_success_probability(
+        sender,
+        receiver,
+    ) == pytest.approx(
+        min(
+            model.operational_readiness(
+                sender
+            ),
+            model.operational_readiness(
+                receiver
+            ),
+        )
+    )
 
 
 def test_operational_readiness_excludes_svc(
@@ -379,6 +434,14 @@ def test_dynamics_hooks_are_called(
 
     assert dynamics.outcome_count == 12
     assert dynamics.recovery_count == 12
+
+    assert dynamics.calls[:12] == [
+        "outcome"
+    ] * 12
+
+    assert dynamics.calls[12:] == [
+        "recovery"
+    ] * 12
 
 
 def test_run_cannot_exceed_max_steps(

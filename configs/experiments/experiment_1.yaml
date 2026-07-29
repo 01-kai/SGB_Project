@@ -14,7 +14,7 @@ dynamics_config: configs/dynamics.yaml
 
 seed_plan:
   start_seed: 5000
-  seed_count: 30
+  seed_count: 50
 
 simulation:
   population_size: 50

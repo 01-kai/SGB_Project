@@ -15,7 +15,7 @@ dynamics_config: configs/dynamics.yaml
 
 seed_plan:
   start_seed: 6000
-  seed_count: 30
+  seed_count: 50
 
 simulation:
   population_size: 50
@@ -44,12 +44,15 @@ shock:
   type: security_incident
   target_selection: highest_degree
   impact: 0.30
-  maximum_network_distance: 3
+  # One-hop propagation keeps the incident local enough to measure network
+  # exposure instead of automatically affecting the full N=50 graph.
+  maximum_network_distance: 1
   distance_decay: 0.50
 
 recovery:
   maximum_observation_steps: 300
-  recovery_tolerance: 0.01
+  recovery_fraction: 0.90
+  minimum_absolute_tolerance: 0.001
   required_consecutive_steps: 10
 
 analysis:

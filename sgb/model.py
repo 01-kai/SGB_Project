@@ -320,14 +320,16 @@ class SGBModel(mesa.Model):
         """
         Calculate exchange success probability without framework weights.
 
-        Both participants contribute equally through the arithmetic mean
-        of their operational-readiness scores.
+        Exchange capability is constrained by the less-ready endpoint.
+        This bottleneck rule is consistent with Experiment 3, where an
+        exchange is eligible only when both endpoint maturity scores meet
+        the selected threshold.
         """
 
-        probability = (
-            self.operational_readiness(sender)
-            + self.operational_readiness(receiver)
-        ) / 2.0
+        probability = min(
+            self.operational_readiness(sender),
+            self.operational_readiness(receiver),
+        )
 
         return min(
             1.0,
@@ -422,6 +424,13 @@ class SGBModel(mesa.Model):
     ) -> dict[str, Any]:
         """Simulate and record one framework-neutral exchange event."""
 
+        # Capture the pre-outcome operational state. These framework-neutral
+        # values allow later experiments to calculate DBL, DMM, and ISF
+        # scores at the exact time of each event instead of reusing one
+        # terminal snapshot for an entire observation window.
+        sender_dimensions = sender.dimensions
+        receiver_dimensions = receiver.dimensions
+
         success_probability = (
             self.pair_success_probability(
                 sender,
@@ -480,6 +489,18 @@ class SGBModel(mesa.Model):
             ),
         }
 
+        for dimension in ALL_DIMENSIONS:
+            event[
+                f"sender_{dimension}"
+            ] = sender_dimensions[
+                dimension
+            ]
+            event[
+                f"receiver_{dimension}"
+            ] = receiver_dimensions[
+                dimension
+            ]
+
         self.event_records.append(event)
 
         return event
@@ -491,9 +512,12 @@ class SGBModel(mesa.Model):
         """
         Execute one organization action.
 
-        Outcome and recovery hooks are delegated to the configured dynamics
-        object. The default null dynamics keeps this model free of arbitrary
-        update constants.
+        The exchange-outcome hook is delegated to the configured dynamics
+        object. Recovery is intentionally applied once to every organization
+        after all exchange attempts for the current model step have finished.
+        This removes activation-order bias: an organization cannot be
+        penalized as a receiver after it has already received its only
+        recovery update for the step.
         """
 
         partner = self.select_partner(agent)
@@ -511,11 +535,6 @@ class SGBModel(mesa.Model):
                 event=event,
             )
 
-        self.dynamics.recover_agent(
-            model=self,
-            agent=agent,
-        )
-
     def step(self) -> None:
         """Advance the ecosystem by one complete simulation step."""
 
@@ -525,6 +544,16 @@ class SGBModel(mesa.Model):
             )
 
         self.agents.shuffle_do("step")
+
+        # Apply one framework-neutral recovery update per organization only
+        # after every exchange outcome for this step has been recorded and
+        # applied. This keeps recovery frequency independent of network
+        # degree and randomized activation order.
+        for agent in self.agents.to_list():
+            self.dynamics.recover_agent(
+                model=self,
+                agent=agent,
+            )
 
         self.collect_metrics()
 

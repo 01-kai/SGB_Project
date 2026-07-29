@@ -217,6 +217,10 @@ def test_recovery_moves_positive_metric_toward_baseline(
 ) -> None:
     agent = model.get_agent(0)
 
+    target = agent.baseline_submetrics[
+        "D2"
+    ]["encryption_coverage"]
+
     agent.set_submetric(
         "D2",
         "encryption_coverage",
@@ -240,17 +244,17 @@ def test_recovery_moves_positive_metric_toward_baseline(
 
     assert after > before
 
-    assert after <= (
-        model.dynamics.baseline_targets[
-            "encryption_coverage"
-        ]
-    )
+    assert after <= target
 
 
 def test_recovery_moves_inverse_metric_toward_baseline(
     model: SGBModel,
 ) -> None:
     agent = model.get_agent(0)
+
+    target = agent.baseline_submetrics[
+        "D2"
+    ]["policy_violation_rate"]
 
     agent.set_submetric(
         "D2",
@@ -275,11 +279,7 @@ def test_recovery_moves_inverse_metric_toward_baseline(
 
     assert after < before
 
-    assert after >= (
-        model.dynamics.baseline_targets[
-            "policy_violation_rate"
-        ]
-    )
+    assert after >= target
 
 
 def test_recovery_adjustment_respects_maximum(
@@ -457,3 +457,51 @@ def test_invalid_success_submetric_is_rejected(
         validate_dynamics_config(
             invalid_config
         )
+
+def test_long_run_preserves_operational_dimensions(
+    small_config: dict[str, Any],
+    dynamics_config: dict[str, Any],
+) -> None:
+    """Regression test for the former D2-D4 collapse failure mode."""
+
+    config = deepcopy(
+        small_config
+    )
+    config[
+        "simulation"
+    ]["population_size"] = 12
+    config[
+        "simulation"
+    ]["max_steps"] = 300
+    config[
+        "network"
+    ]["attachment_m"] = 2
+
+    dynamics = NeutralOperationalDynamics(
+        base_config=config,
+        dynamics_config=dynamics_config,
+    )
+
+    model = SGBModel(
+        config=config,
+        seed=2026,
+        dynamics=dynamics,
+    )
+
+    model.run(
+        steps=300
+    )
+
+    terminal = model.get_results().iloc[-1]
+
+    for dimension in {
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "SVC",
+    }:
+        assert terminal[
+            dimension
+        ] > 0.20

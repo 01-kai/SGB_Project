@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from scipy.stats import spearmanr
+from tqdm.auto import tqdm
 
 from sgb.config import (
     EXPECTED_DIMENSION_SUBMETRICS,
@@ -70,6 +71,16 @@ DIRECT_CODES = {
     "P21",
 }
 
+# P9 is resolved by public-source calibration rather than by a simulation
+# perturbation. Keeping it in DIRECT_CODES preserves complete P1-P21
+# coverage, while excluding it from SIMULATION_SCENARIO_CODES avoids
+# spending hours rerunning trajectories for a label mix that does not
+# change operational behavior in the current model.
+SIMULATION_SCENARIO_CODES = (
+    DIRECT_CODES
+    - {"P9"}
+)
+
 LINKED_CODES = {
     "P15",
     "P16",
@@ -97,7 +108,6 @@ EXPECTED_OPERATIONS = {
     "P6": "dimension_weights",
     "P7": "dimension_weights",
     "P8": "framework_weights",
-    "P9": "organization_mix",
     "P10": "beta_concentration",
     "P11": "exchange_distribution",
     "P12": "network_attachment",
@@ -105,6 +115,8 @@ EXPECTED_OPERATIONS = {
     "P14": "shock_magnitude",
     "P21": "freshness_window",
 }
+
+_PROGRESS_ENABLED = False
 
 
 class SensitivityConfigurationError(ValueError):
@@ -164,6 +176,39 @@ class SensitivityResult:
             )
         )
 
+def _get_p9_calibration_status(
+    study_config: Mapping[str, Any],
+) -> dict[str, Any]:
+    calibration = study_config.get(
+        "public_calibration",
+        {},
+    )
+
+    complete = bool(
+        calibration.get(
+            "P9_complete",
+            False,
+        )
+    )
+
+    return {
+        "complete": complete,
+        "status": (
+            "complete"
+            if complete
+            else "pending"
+        ),
+        "calibration_type": calibration.get(
+            "calibration_type"
+        ),
+        "source_scope": calibration.get(
+            "source_scope"
+        ),
+        "baseline_probabilities": calibration.get(
+            "baseline_probabilities",
+            {},
+        ),
+    }
 
 def load_sensitivity_config(
     path: str | Path = SENSITIVITY_CONFIG_PATH,
@@ -371,6 +416,35 @@ def validate_sensitivity_config(
         "step",
     )
 
+    if scan.get(
+        "endpoint_score_rule"
+    ) != "minimum":
+        raise SensitivityConfigurationError(
+            "threshold_scan.endpoint_score_rule must be 'minimum'."
+        )
+
+    if scan.get(
+        "optimization_metric"
+    ) not in {
+        "f1_score",
+        "balanced_accuracy",
+    }:
+        raise SensitivityConfigurationError(
+            "threshold_scan.optimization_metric must be "
+            "'f1_score' or 'balanced_accuracy'."
+        )
+
+    if scan.get(
+        "tie_breaker"
+    ) not in {
+        "lower_threshold",
+        "higher_threshold",
+    }:
+        raise SensitivityConfigurationError(
+            "threshold_scan.tie_breaker must be "
+            "'lower_threshold' or 'higher_threshold'."
+        )
+
     freshness = _mapping(
         config,
         "freshness_model",
@@ -384,6 +458,74 @@ def validate_sensitivity_config(
         freshness,
         "rationale",
     )
+
+    public_calibration = _mapping(
+        config,
+        "public_calibration",
+    )
+
+    p9_complete = public_calibration.get(
+        "P9_complete"
+    )
+
+    if not isinstance(
+        p9_complete,
+        bool,
+    ):
+        raise SensitivityConfigurationError(
+            "public_calibration.P9_complete must be Boolean."
+        )
+
+    _non_empty_string(
+        public_calibration,
+        "calibration_type",
+    )
+
+    _non_empty_string(
+        public_calibration,
+        "source_scope",
+    )
+
+    baseline_probabilities = _mapping(
+        public_calibration,
+        "baseline_probabilities",
+    )
+
+    expected_organization_types = {
+        "government_ministry",
+        "state_enterprise",
+        "regulated_private_entity",
+    }
+
+    if set(
+        baseline_probabilities
+    ) != expected_organization_types:
+        raise SensitivityConfigurationError(
+            "public_calibration.baseline_probabilities must contain "
+            "government_ministry, state_enterprise, and "
+            "regulated_private_entity."
+        )
+
+    probability_values = [
+        _unit_value(
+            value,
+            f"P9 probability {name}",
+        )
+        for name, value
+        in baseline_probabilities.items()
+    ]
+
+    if not math.isclose(
+        sum(
+            probability_values
+        ),
+        1.0,
+        rel_tol=1e-9,
+        abs_tol=1e-9,
+    ):
+        raise SensitivityConfigurationError(
+            "P9 baseline probabilities must sum to 1.0."
+        )
 
     scenarios = config.get(
         "scenarios"
@@ -424,9 +566,11 @@ def validate_sensitivity_config(
             "operation",
         )
 
-        if code not in DIRECT_CODES:
+        if code not in SIMULATION_SCENARIO_CODES:
             raise SensitivityConfigurationError(
-                f"Unsupported direct sensitivity code: {code}."
+                f"Unsupported simulation sensitivity code: {code}. "
+                "P9 is resolved through public_calibration rather than "
+                "through simulation scenarios."
             )
 
         expected_operation = EXPECTED_OPERATIONS[
@@ -462,7 +606,7 @@ def validate_sensitivity_config(
         )
 
     missing_direct_codes = (
-        DIRECT_CODES
+        SIMULATION_SCENARIO_CODES
         - observed_codes
     )
 
@@ -940,8 +1084,25 @@ def run_sensitivity_study(
         ] in selected_codes
     ]
 
-    baseline_artifacts = {
-        seed: _run_artifact(
+    baseline_artifacts: dict[
+        int,
+        RunArtifact,
+    ] = {}
+
+    for seed in tqdm(
+        profile.seeds,
+        total=profile.seed_count,
+        desc=(
+            f"Sensitivity {profile.name}: baseline"
+        ),
+        unit="seed",
+        dynamic_ncols=True,
+        leave=True,
+        disable=not _PROGRESS_ENABLED,
+    ):
+        baseline_artifacts[
+            seed
+        ] = _run_artifact(
             base_config=base_config,
             dynamics_config=(
                 dynamics_config
@@ -949,8 +1110,6 @@ def run_sensitivity_study(
             profile=profile,
             seed=seed,
         )
-        for seed in profile.seeds
-    }
 
     metric_rows: list[
         dict[str, Any]
@@ -971,7 +1130,10 @@ def run_sensitivity_study(
     for code in sorted(
         selected_codes
     ):
-        if code == "P14":
+        if code in {
+            "P9",
+            "P14",
+        }:
             continue
 
         for seed, artifact in (
@@ -997,7 +1159,19 @@ def run_sensitivity_study(
                 )
             )
 
-    for scenario in selected_scenarios:
+    for scenario in tqdm(
+        selected_scenarios,
+        total=len(
+            selected_scenarios
+        ),
+        desc=(
+            f"Sensitivity {profile.name}: scenarios"
+        ),
+        unit="scenario",
+        dynamic_ncols=True,
+        leave=True,
+        disable=not _PROGRESS_ENABLED,
+    ):
         code = str(
             scenario[
                 "code"
@@ -1051,7 +1225,17 @@ def run_sensitivity_study(
                 scenario,
             )
 
-            for seed in profile.seeds:
+            for seed in tqdm(
+                profile.seeds,
+                total=profile.seed_count,
+                desc=(
+                    f"{code} {name}"
+                ),
+                unit="seed",
+                dynamic_ncols=True,
+                leave=False,
+                disable=not _PROGRESS_ENABLED,
+            ):
                 scenario_artifact = (
                     _run_artifact(
                         base_config=(
@@ -1092,12 +1276,32 @@ def run_sensitivity_study(
                         ]
                     )
 
+                    # Isolate the effect of the alternative subweights on
+                    # organization ranking. The same baseline submetric
+                    # snapshots are rescored post hoc; comparing against a
+                    # separately evolved trajectory would mix weight
+                    # sensitivity with stochastic path divergence.
+                    rescored_snapshots = (
+                        _snapshots_with_recomputed_dimensions(
+                            snapshots=(
+                                baseline_artifacts[
+                                    seed
+                                ].snapshots
+                            ),
+                            formula_config=(
+                                scenario_config[
+                                    "dimension_formulas"
+                                ]
+                            ),
+                        )
+                    )
+
                     correlation = (
                         _dimension_rank_correlation(
                             baseline_artifacts[
                                 seed
                             ].snapshots,
-                            scenario_artifact.snapshots,
+                            rescored_snapshots,
                             dimension,
                         )
                     )
@@ -1290,6 +1494,10 @@ def run_sensitivity_study(
         study_config
     )
 
+    p9_calibration = _get_p9_calibration_status(
+        study_config
+    )
+
     direct_stability_passed = bool(
         stability_summary.empty
         or stability_summary[
@@ -1312,9 +1520,9 @@ def run_sensitivity_study(
     )
 
     public_calibration_complete = bool(
-        study_config[
-            "public_calibration"
-        ]["P9_complete"]
+        p9_calibration[
+            "complete"
+        ]
     )
 
     simulation_passed = bool(
@@ -1393,6 +1601,9 @@ def run_sensitivity_study(
             "P9_public_calibration_complete": (
                 public_calibration_complete
             ),
+            "P9_calibration": (
+                p9_calibration
+            ),
             "linked_studies_required": sorted(
                 LINKED_CODES
             ),
@@ -1409,6 +1620,10 @@ def build_coverage_matrix(
     linked = study_config[
         "linked_studies"
     ]
+
+    p9_calibration = _get_p9_calibration_status(
+        study_config
+    )
 
     categories = {
         "P1": "III",
@@ -1446,14 +1661,22 @@ def build_coverage_matrix(
 
         if code in DIRECT_CODES:
             implementation = (
-                "sgb.sensitivity"
+                "public_source_calibration"
+                if code == "P9"
+                else "sgb.sensitivity"
             )
 
             if code == "P9":
-                resolution_status = (
-                    "simulation_envelope_complete_"
-                    "public_calibration_pending"
-                )
+                if p9_calibration[
+                    "complete"
+                ]:
+                    resolution_status = (
+                        "public_source_calibration_complete"
+                    )
+                else:
+                    resolution_status = (
+                        "public_source_calibration_pending"
+                    )
             else:
                 resolution_status = (
                     "direct_sensitivity_implemented"
@@ -1728,9 +1951,7 @@ def _score_artifact(
     )
 
     thresholds = _recommend_thresholds(
-        scored_agents=(
-            scored_agents
-        ),
+        definitions=definitions,
         events=artifact.events,
         study_config=study_config,
     )
@@ -1803,7 +2024,10 @@ def _score_artifact(
 
 def _recommend_thresholds(
     *,
-    scored_agents: pd.DataFrame,
+    definitions: Mapping[
+        str,
+        Any,
+    ],
     events: pd.DataFrame,
     study_config: Mapping[str, Any],
 ) -> dict[str, float]:
@@ -1822,6 +2046,18 @@ def _recommend_thresholds(
     refinement = scan[
         "refinement"
     ]
+
+    optimization_metric = str(
+        scan[
+            "optimization_metric"
+        ]
+    )
+
+    tie_breaker = str(
+        scan[
+            "tie_breaker"
+        ]
+    )
 
     coarse_thresholds = _float_range(
         float(
@@ -1853,33 +2089,15 @@ def _recommend_thresholds(
     ] = {}
 
     for framework in FRAMEWORKS:
-        score_map = dict(
-            zip(
-                scored_agents[
-                    "uid"
-                ].astype(int),
-                scored_agents[
-                    f"GMI_{framework}"
-                ].astype(float),
-                strict=True,
+        endpoint_scores = (
+            _event_endpoint_scores(
+                events=events,
+                definition=(
+                    definitions[
+                        framework
+                    ]
+                ),
             )
-        )
-
-        endpoint_scores = np.minimum(
-            events[
-                "sender_uid"
-            ].map(
-                score_map
-            ).to_numpy(
-                dtype=float
-            ),
-            events[
-                "receiver_uid"
-            ].map(
-                score_map
-            ).to_numpy(
-                dtype=float
-            ),
         )
 
         coarse_rows = [
@@ -1896,7 +2114,11 @@ def _recommend_thresholds(
         ]
 
         coarse_best = _select_best_threshold(
-            coarse_rows
+            coarse_rows,
+            optimization_metric=(
+                optimization_metric
+            ),
+            tie_breaker=tie_breaker,
         )
 
         refined_thresholds = _float_range(
@@ -1944,7 +2166,11 @@ def _recommend_thresholds(
             [
                 *coarse_rows,
                 *refined_rows,
-            ]
+            ],
+            optimization_metric=(
+                optimization_metric
+            ),
+            tie_breaker=tie_breaker,
         )
 
     return recommendations
@@ -2021,30 +2247,123 @@ def _threshold_metrics(
     }
 
 
+def _event_endpoint_scores(
+    *,
+    events: pd.DataFrame,
+    definition: Any,
+) -> np.ndarray:
+    """Calculate minimum event-time framework score from raw dimensions."""
+
+    sender_scores = np.zeros(
+        len(events),
+        dtype=float,
+    )
+
+    receiver_scores = np.zeros(
+        len(events),
+        dtype=float,
+    )
+
+    for dimension, weight in (
+        definition.weights.items()
+    ):
+        sender_column = (
+            f"sender_{dimension}"
+        )
+        receiver_column = (
+            f"receiver_{dimension}"
+        )
+
+        for column in {
+            sender_column,
+            receiver_column,
+        }:
+            if column not in events.columns:
+                raise SensitivityError(
+                    "Exchange events are missing event-time "
+                    f"dimension column {column!r}."
+                )
+
+        sender_scores += (
+            float(weight)
+            * events[
+                sender_column
+            ].to_numpy(
+                dtype=float
+            )
+        )
+
+        receiver_scores += (
+            float(weight)
+            * events[
+                receiver_column
+            ].to_numpy(
+                dtype=float
+            )
+        )
+
+    return np.minimum(
+        sender_scores,
+        receiver_scores,
+    )
+
+
 def _select_best_threshold(
     rows: Sequence[
         Mapping[str, Any]
     ],
+    *,
+    optimization_metric: str,
+    tie_breaker: str,
 ) -> float:
     if not rows:
         raise SensitivityError(
             "Threshold rows cannot be empty."
         )
 
+    if optimization_metric not in {
+        "f1_score",
+        "balanced_accuracy",
+    }:
+        raise SensitivityConfigurationError(
+            "Unsupported threshold optimization metric."
+        )
+
+    if tie_breaker not in {
+        "lower_threshold",
+        "higher_threshold",
+    }:
+        raise SensitivityConfigurationError(
+            "Unsupported threshold tie breaker."
+        )
+
+    secondary_metric = (
+        "balanced_accuracy"
+        if optimization_metric == "f1_score"
+        else "f1_score"
+    )
+
+    threshold_direction = (
+        1.0
+        if tie_breaker == "lower_threshold"
+        else -1.0
+    )
+
     selected = sorted(
         rows,
         key=lambda row: (
             -float(
                 row[
-                    "f1_score"
+                    optimization_metric
                 ]
             ),
             -float(
                 row[
-                    "balanced_accuracy"
+                    secondary_metric
                 ]
             ),
-            float(
+            threshold_direction
+            * float(
                 row[
                     "threshold"
                 ]
@@ -2145,6 +2464,55 @@ def _dimension_rank_correlation(
         )
 
     return correlation
+
+
+def _snapshots_with_recomputed_dimensions(
+    *,
+    snapshots: Sequence[
+        Mapping[str, Any]
+    ],
+    formula_config: Mapping[
+        str,
+        Mapping[str, Any],
+    ],
+) -> list[dict[str, Any]]:
+    """Recompute dimensions on shared submetric states without rerunning."""
+
+    transformed: list[
+        dict[str, Any]
+    ] = []
+
+    for snapshot in snapshots:
+        copied = deepcopy(
+            dict(
+                snapshot
+            )
+        )
+
+        submetrics = copied.get(
+            "submetrics"
+        )
+
+        if not isinstance(
+            submetrics,
+            Mapping,
+        ):
+            raise SensitivityError(
+                "Snapshot is missing submetrics for post-hoc rescoring."
+            )
+
+        copied[
+            "dimensions"
+        ] = compute_dimension_scores(
+            submetrics,
+            formula_config,
+        )
+
+        transformed.append(
+            copied
+        )
+
+    return transformed
 
 
 def _evaluate_maturity_cutoffs(
@@ -3701,6 +4069,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
     )
 
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help=(
+            "Disable sensitivity progress bars. "
+            "Useful for automated or redirected runs."
+        ),
+    )
+
     return parser
 
 
@@ -3711,6 +4088,12 @@ def main(
 
     arguments = build_parser().parse_args(
         argv
+    )
+
+    global _PROGRESS_ENABLED
+
+    _PROGRESS_ENABLED = (
+        not arguments.no_progress
     )
 
     try:

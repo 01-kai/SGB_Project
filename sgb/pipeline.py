@@ -130,6 +130,7 @@ def validate_pipeline_config(
         project,
         "short_name",
     )
+
     _require_non_empty_string(
         project,
         "version",
@@ -152,6 +153,19 @@ def validate_pipeline_config(
             "execution.stop_on_failure must be Boolean."
         )
 
+    stream_output = execution.get(
+        "stream_output",
+        True,
+    )
+
+    if not isinstance(
+        stream_output,
+        bool,
+    ):
+        raise PipelineConfigurationError(
+            "execution.stream_output must be Boolean."
+        )
+
     _require_non_empty_string(
         execution,
         "log_path",
@@ -162,7 +176,10 @@ def validate_pipeline_config(
     )
 
     if (
-        not isinstance(stages, list)
+        not isinstance(
+            stages,
+            list,
+        )
         or not stages
     ):
         raise PipelineConfigurationError(
@@ -194,6 +211,7 @@ def validate_pipeline_config(
         observed_names.add(
             name
         )
+
         ordered_names.append(
             name
         )
@@ -271,8 +289,7 @@ def validate_pipeline_config(
     _validate_acyclic_dependencies(
         stages
     )
-
-
+    
 def list_stage_names(
     pipeline_config: Mapping[str, Any],
 ) -> list[str]:
@@ -515,6 +532,15 @@ def run_pipeline(
         ]["stop_on_failure"]
     )
 
+    stream_output = bool(
+        pipeline_config[
+            "execution"
+        ].get(
+            "stream_output",
+            True,
+        )
+    )
+
     should_continue = (
         continue_on_failure
         if continue_on_failure
@@ -599,13 +625,34 @@ def run_pipeline(
         )
 
         try:
-            completed = subprocess.run(
-                command,
-                cwd=root,
-                check=False,
-                capture_output=True,
-                text=True,
-            )
+            if stream_output:
+                completed = subprocess.run(
+                    command,
+                    cwd=root,
+                    check=False,
+                    text=True,
+                )
+
+                stdout_tail = ""
+                stderr_tail = ""
+
+            else:
+                completed = subprocess.run(
+                    command,
+                    cwd=root,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+
+                stdout_tail = _tail_text(
+                    completed.stdout
+                )
+
+                stderr_tail = _tail_text(
+                    completed.stderr
+                )
+
         except OSError as error:
             raise PipelineExecutionError(
                 f"Unable to execute stage {stage_name!r}: "
@@ -669,12 +716,8 @@ def run_pipeline(
                 "missing_artifacts": (
                     missing_artifacts
                 ),
-                "stdout_tail": _tail_text(
-                    completed.stdout
-                ),
-                "stderr_tail": _tail_text(
-                    completed.stderr
-                ),
+                "stdout_tail": stdout_tail,
+                "stderr_tail": stderr_tail,
             }
         )
 

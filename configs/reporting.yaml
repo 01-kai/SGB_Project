@@ -6,7 +6,7 @@ project:
     Synthetic Benchmarking of Data Governance Maturity Across Simulated
     Multi-Organizational Ecosystems
   short_name: SGB
-  version: "0.2.0"
+  version: "0.3.0"
 
 strict_required_inputs: true
 

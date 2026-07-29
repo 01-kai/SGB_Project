@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synthetic-governance-benchmark"
-version = "0.2.0"
+version = "0.3.0"
 description = "Agent-based synthetic benchmarking framework for data governance maturity."
 readme = "README.md"
 requires-python = ">=3.12"
