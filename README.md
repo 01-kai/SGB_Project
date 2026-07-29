@@ -1,61 +1,110 @@
 # Synthetic Governance Benchmark (SGB)
 
 <p align="center">
-  <strong>A reproducible agent-based simulation framework for benchmarking data governance maturity across synthetic multi-organizational ecosystems.</strong>
+  <strong>A reproducible agent-based simulation framework for benchmarking data-governance maturity across synthetic multi-organizational ecosystems.</strong>
 </p>
 
 <p align="center">
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.12%2B-blue">
-  <img alt="Mesa" src="https://img.shields.io/badge/ABM-Mesa-green">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.12-blue">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.3.0-blueviolet">
+  <img alt="ABM" src="https://img.shields.io/badge/ABM-Mesa-green">
   <img alt="Tests" src="https://img.shields.io/badge/tests-pytest-brightgreen">
   <img alt="Status" src="https://img.shields.io/badge/status-research%20prototype-orange">
-  <img alt="License" src="https://img.shields.io/badge/license-not%20specified-lightgrey">
 </p>
+
+---
+
+## Contents
+
+- [Overview](#overview)
+- [Research Motivation](#research-motivation)
+- [Research Objectives](#research-objectives)
+- [Core Methodological Principle](#core-methodological-principle)
+- [Governance Maturity Index](#governance-maturity-index)
+- [Compared Frameworks](#compared-frameworks)
+- [Agent-Based Simulation](#agent-based-simulation)
+- [Perturbations and Recovery](#perturbations-and-recovery)
+- [Experiments](#experiments)
+- [Calibration and Convergence](#calibration-and-convergence)
+- [Sensitivity Analysis](#sensitivity-analysis)
+- [P9 Public-Source Calibration](#p9-public-source-calibration)
+- [Project Structure](#project-structure)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Testing](#testing)
+- [Running Individual Studies](#running-individual-studies)
+- [Running the Full Pipeline](#running-the-full-pipeline)
+- [Outputs](#outputs)
+- [Reporting](#reporting)
+- [Reproducibility](#reproducibility)
+- [Current Status](#current-status)
+- [Scientific Limitations](#scientific-limitations)
+- [Development Workflow](#development-workflow)
+- [Citation](#citation)
+- [License](#license)
+- [Repository](#repository)
 
 ---
 
 ## Overview
 
-**Synthetic Governance Benchmark (SGB)** is a computational research framework for evaluating data governance maturity models in simulated multi-organizational ecosystems.
+**Synthetic Governance Benchmark (SGB)** is a computational research framework for evaluating data-governance maturity models in simulated multi-organizational ecosystems.
 
-The framework represents organizations as autonomous agents with configurable governance profiles and simulates inter-organizational data exchange over a network. It supports reproducible experimentation without requiring access to confidential organizational data.
+The framework represents organizations as autonomous agents with configurable governance profiles and simulates inter-organizational data exchange over a synthetic network. It supports reproducible experimentation without requiring access to confidential organizational data.
 
 SGB was developed for the research project:
 
 > **Synthetic Benchmarking of Data Governance Maturity Across Simulated Multi-Organizational Ecosystems: A Computational Framework and Agent-Based Evaluation Approach**
 
-The framework is designed to support:
+The framework supports:
 
-* governance maturity framework comparison,
-* failure and shock propagation analysis,
-* resilience and recovery evaluation,
-* governance-based onboarding threshold estimation,
-* convergence analysis,
-* and global parameter sensitivity analysis.
+- governance maturity framework comparison,
+- failure and shock propagation analysis,
+- resilience and recovery evaluation,
+- governance-based onboarding threshold estimation,
+- time, seed, and population convergence analysis,
+- parameter sensitivity analysis,
+- reproducible generation of tables, figures, metadata, and reports.
 
 ---
 
 ## Research Motivation
 
-Evaluating data governance maturity in real multi-organizational environments is difficult because of:
+Evaluating data-governance maturity in real multi-organizational environments is difficult because of:
 
-* data sensitivity,
-* restricted institutional access,
-* organizational heterogeneity,
-* lack of comparable governance benchmarks,
-* limited longitudinal governance data,
-* and difficulty reproducing real-world incidents.
+- data sensitivity,
+- restricted institutional access,
+- organizational heterogeneity,
+- lack of comparable governance benchmarks,
+- limited longitudinal governance data,
+- and difficulty reproducing operational failures or security incidents.
 
 SGB addresses these constraints through a **fully synthetic and reproducible simulation environment**.
 
 The framework enables researchers to investigate questions such as:
 
-* How do alternative governance maturity frameworks score the same organizations?
-* How do governance failures propagate through connected organizations?
-* What maturity threshold could be used for ecosystem onboarding?
-* How quickly do organizations recover after operational or security shocks?
-* Are the conclusions stable across seeds, population sizes, and simulation horizons?
-* How sensitive are framework rankings to modeling assumptions and weights?
+- How do alternative governance maturity frameworks score the same organizations?
+- How do governance failures propagate through connected organizations?
+- What maturity threshold could be used for ecosystem onboarding?
+- How quickly do organizations recover after operational or security shocks?
+- Are conclusions stable across random seeds, population sizes, and simulation horizons?
+- How sensitive are framework rankings to modeling assumptions and parameter choices?
+
+---
+
+## Research Objectives
+
+The principal objectives of SGB are to:
+
+1. construct a reproducible synthetic ecosystem of heterogeneous organizations;
+2. model governance maturity through measurable submetrics and dimensions;
+3. simulate inter-organizational data exchange over a connected network;
+4. evaluate multiple governance frameworks on identical operational trajectories;
+5. measure the propagation and recovery of governance-related failures;
+6. estimate maturity thresholds for exchange-system onboarding;
+7. evaluate the stability of results across time horizons, seed counts, and population sizes;
+8. assess the robustness of conclusions under parameter variation;
+9. generate reproducible research artifacts suitable for academic analysis.
 
 ---
 
@@ -68,9 +117,19 @@ SGB separates:
 
 Organizations, exchanges, failures, shocks, and recovery processes are simulated independently of the evaluated governance frameworks.
 
-DBL, DMM, and ISF then score the **same organizational states and trajectories**.
+DBL, DMM, and ISF then score the **same organizational states, events, and trajectories**.
 
-This design prevents a framework from receiving an artificial advantage through framework-specific simulation behavior.
+This design prevents any framework from receiving an artificial advantage through framework-specific simulation dynamics.
+
+### Shared-trajectory evaluation
+
+The framework uses shared trajectories wherever comparisons are required. This means:
+
+- the same organizations are evaluated by all frameworks;
+- the same exchange events are observed;
+- the same perturbations are applied;
+- the same random seeds are reused where appropriate;
+- framework differences arise from scoring definitions rather than different operational histories.
 
 ---
 
@@ -80,23 +139,23 @@ SGB evaluates each organization using a **Governance Maturity Index (GMI)** deri
 
 ### Standard dimensions
 
-| Code | Dimension             | Representative Submetrics                                       |
-| ---- | --------------------- | --------------------------------------------------------------- |
-| `D1` | Data Quality          | Completeness, duplicate rate, schema validation                 |
-| `D2` | Security and Privacy  | Encryption coverage, breach-response latency, policy violations |
-| `D3` | Metadata and Lineage  | Lineage coverage, catalog coverage, catalog freshness           |
-| `D4` | Regulatory Compliance | Rule satisfaction, consent propagation                          |
-| `D5` | Interoperability      | Schema reconciliation, API adherence, format translation        |
+| Code | Dimension | Representative Submetrics |
+|---|---|---|
+| `D1` | Data Quality | Completeness, duplicate rate, schema validation |
+| `D2` | Security and Privacy | Encryption coverage, response latency, policy violations |
+| `D3` | Metadata and Lineage | Lineage coverage, catalog coverage, catalog freshness |
+| `D4` | Regulatory Compliance | Rule satisfaction, consent propagation |
+| `D5` | Interoperability | Schema reconciliation, API adherence, format translation |
 
 ### Sovereignty dimension
 
 The Iran-Specific Framework adds an additional dimension:
 
-| Code  | Dimension                     | Representative Submetrics                                                |
-| ----- | ----------------------------- | ------------------------------------------------------------------------ |
+| Code | Dimension | Representative Submetrics |
+|---|---|---|
 | `SVC` | Sovereignty and Value Control | Localization compliance, cross-border flagging, audit-trail completeness |
 
-All submetrics and dimension scores are bounded to:
+All submetrics and derived dimension scores are bounded to:
 
 ```text
 [0, 1]
@@ -106,27 +165,34 @@ Higher values consistently represent stronger governance maturity.
 
 Inverse submetrics, such as duplicate rate or policy-violation rate, are transformed before dimension aggregation.
 
+The exact formulas, weights, and baseline distributions are defined in:
+
+```text
+configs/base.yaml
+```
+
 ---
 
 ## Compared Frameworks
 
 SGB currently evaluates three governance maturity framework profiles:
 
-| Framework | Description                                                     |
-| --------- | --------------------------------------------------------------- |
-| `DBL`     | DAMA-DMBOK-like baseline governance profile                     |
-| `DMM`     | Data Management Maturity-style process-oriented profile         |
-| `ISF`     | Iran-Specific Framework including Sovereignty and Value Control |
+| Framework | Description |
+|---|---|
+| `DBL` | DAMA-DMBOK-like baseline governance profile |
+| `DMM` | Data Management Maturity-style process-oriented profile |
+| `ISF` | Iran-Specific Framework including Sovereignty and Value Control |
 
 The frameworks differ in their configured dimension weights.
 
-They do **not** receive different operational dynamics, exchange-success logic, shock effects, or recovery advantages.
+They do **not** receive different:
 
-Framework definitions are stored in:
-
-```text
-configs/base.yaml
-```
+- exchange-success logic,
+- operational dynamics,
+- shock propagation rules,
+- recovery rules,
+- network structures,
+- or random trajectories.
 
 ---
 
@@ -138,39 +204,64 @@ The default network is generated using the **Barabási–Albert model**, represe
 
 At each simulation step:
 
-1. an organization selects an exchange partner,
-2. an exchange volume is sampled,
-3. exchange readiness is calculated using the less-ready endpoint as the bottleneck,
-4. the exchange succeeds or fails,
-5. all exchange outcomes update organizational submetrics,
-6. every organization receives one framework-neutral recovery update toward its own sampled reference profile,
-7. and system-level metrics are recorded.
+1. organizations select exchange partners;
+2. exchange volumes are sampled;
+3. operational readiness is evaluated;
+4. exchanges succeed or fail;
+5. organizational submetrics are updated;
+6. perturbation and recovery rules are applied;
+7. state and event metrics are recorded.
 
-Exchange volumes are sampled from a **bounded Pareto Type I distribution**, providing a heavy-tailed distribution while enforcing configurable lower and upper limits.
+### Exchange-volume distribution
+
+Exchange volumes are sampled from a **bounded Pareto Type I distribution**.
+
+This provides a heavy-tailed distribution while enforcing configurable lower and upper limits.
+
+### Organization heterogeneity
+
+Organizations may differ in:
+
+- organization type,
+- initial governance submetrics,
+- network degree,
+- exposure to exchange failures,
+- baseline maturity,
+- recovery trajectory,
+- and perturbation impact.
+
+### Baseline-preserving recovery
+
+Version `0.3.0` preserves organization-specific baseline heterogeneity during recovery.
+
+Degraded submetrics recover toward each organization’s sampled baseline rather than toward one shared global constant.
 
 ---
 
-## Perturbations
+## Perturbations and Recovery
 
 SGB includes framework-neutral perturbations for studying ecosystem resilience.
 
 Supported perturbations include:
 
-* data-quality degradation,
-* metadata degradation,
-* regulatory changes,
-* interoperability failures,
-* sovereignty-compliance failures,
-* and network security incidents.
+- data-quality degradation,
+- metadata degradation,
+- regulatory changes,
+- interoperability failures,
+- sovereignty-compliance failures,
+- and network security incidents.
 
-Security incidents can propagate through the organizational network according to:
+Security incidents can propagate according to:
 
-* network distance,
-* configured impact,
-* maximum propagation distance,
-* and distance-decay parameters.
+- network distance,
+- configured impact magnitude,
+- propagation depth,
+- distance decay,
+- and affected-organization eligibility.
 
-The same perturbation is evaluated under all governance framework scoring views.
+The same perturbation trajectory is evaluated under every framework.
+
+Recovery is measured using the post-shock restoration of affected organizations relative to their pre-shock condition.
 
 ---
 
@@ -178,60 +269,93 @@ The same perturbation is evaluated under all governance framework scoring views.
 
 SGB implements four primary experiments.
 
-| Experiment   | Objective                                                       | Main Outputs                                               |
-| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------- |
-| Experiment 1 | Compare DBL, DMM, and ISF on shared trajectories                | Framework scores, rankings, confidence intervals           |
-| Experiment 2 | Inject a security incident and measure propagation and recovery | Immediate loss, affected organizations, recovery time      |
-| Experiment 3 | Evaluate governance maturity thresholds                         | Balanced accuracy, F1, coverage, recommended thresholds |
-| Experiment 4 | Evaluate low-to-high maturity distributions                     | Framework response across maturity regimes                 |
+| Experiment | Objective | Main Outputs |
+|---|---|---|
+| Experiment 1 | Compare DBL, DMM, and ISF on shared trajectories | Framework scores, rankings, confidence intervals |
+| Experiment 2 | Inject a security incident and measure propagation and recovery | Immediate loss, affected organizations, recovery time |
+| Experiment 3 | Evaluate governance maturity thresholds | Precision, recall, specificity, F1, balanced accuracy |
+| Experiment 4 | Evaluate low-to-high maturity distributions | Framework response across maturity regimes |
 
 ### Experiment 1 — Framework Comparison
 
-Compares all frameworks on identical steady-state organizational trajectories.
+Experiment 1 compares all frameworks on identical steady-state organizational trajectories.
 
 ```bash
 python -m sgb.experiments \
   --config configs/experiments/experiment_1.yaml
 ```
 
+Primary outputs include:
+
+- framework-level E-GMI estimates,
+- confidence intervals,
+- framework rankings,
+- maturity-category distributions,
+- per-seed summaries.
+
 ### Experiment 2 — Security Propagation and Recovery
 
-Injects a network security incident after steady-state detection and measures propagation and recovery.
+Experiment 2 injects a framework-neutral security incident after stabilization.
 
 ```bash
 python -m sgb.experiments \
   --config configs/experiments/experiment_2.yaml
 ```
 
+Primary outputs include:
+
+- number of affected organizations,
+- propagation distance,
+- immediate maturity loss,
+- recovery time,
+- recovery confidence intervals,
+- framework-level post-hoc comparisons.
+
 ### Experiment 3 — Threshold Selection
 
-Scans the complete maturity threshold interval from `0.0` to `1.0`, followed by local refinement. Endpoint scores are calculated from the pre-outcome dimensions recorded for each exchange event, and the default selection criterion is balanced accuracy.
+Experiment 3 evaluates maturity thresholds over the full configured range.
 
 ```bash
 python -m sgb.experiments \
   --config configs/experiments/experiment_3.yaml
 ```
 
+Threshold selection uses event-time governance scores rather than one terminal score map.
+
+Thresholds are evaluated using:
+
+- precision,
+- recall,
+- specificity,
+- F1 score,
+- balanced accuracy,
+- event coverage,
+- volume coverage.
+
+The current implementation uses **balanced accuracy** as the primary threshold-optimization criterion to avoid trivial all-eligible or all-ineligible solutions.
+
 ### Experiment 4 — Maturity Distribution Sweep
 
-Evaluates all frameworks across low, moderate, and high synthetic maturity regimes.
+Experiment 4 evaluates all frameworks across low-to-high synthetic maturity regimes.
 
 ```bash
 python -m sgb.experiments \
   --config configs/experiments/experiment_4.yaml
 ```
 
+The experiment verifies that configured low and high Beta-distribution endpoints represent sufficiently distinct maturity conditions.
+
 ---
 
 ## Calibration and Convergence
 
-SGB does not assume that the default simulation settings are automatically valid.
+SGB does not assume that default simulation settings are automatically valid.
 
-It includes dedicated studies for:
+It includes dedicated calibration and convergence studies.
 
 ### Baseline calibration
 
-Validates whether sampled submetrics and dimensions match their configured theoretical expectations.
+The baseline calibration study verifies that sampled submetrics and derived dimensions match their configured theoretical expectations.
 
 ```bash
 python -m sgb.calibration \
@@ -240,7 +364,7 @@ python -m sgb.calibration \
 
 ### Time convergence
 
-Evaluates whether the simulation horizon is sufficiently long.
+The time-convergence study evaluates whether the simulation horizon is sufficiently long.
 
 ```bash
 python -m sgb.convergence \
@@ -249,7 +373,11 @@ python -m sgb.convergence \
 
 ### Seed convergence
 
-Evaluates whether the number of random seeds produces stable estimates and rankings.
+The seed-convergence study evaluates:
+
+- confidence-interval stability,
+- framework-ranking stability,
+- and the supported number of random seeds.
 
 ```bash
 python -m sgb.convergence \
@@ -258,32 +386,44 @@ python -m sgb.convergence \
 
 ### Population convergence
 
-Evaluates whether conclusions remain stable across alternative organization population sizes.
+The population-convergence study evaluates whether conclusions remain stable across candidate organization counts.
 
 ```bash
 python -m sgb.convergence \
   --study configs/studies/population_convergence.yaml
 ```
 
+A rejected convergence candidate is a scientific result and does not necessarily indicate a software error.
+
 ---
 
 ## Sensitivity Analysis
 
-The global sensitivity study evaluates the robustness of conclusions to alternative parameter choices.
+The sensitivity study evaluates the robustness of conclusions under alternative modeling assumptions.
 
 Direct sensitivity analysis covers:
 
-* framework weights,
-* dimension subweights,
-* organization-type proportions,
-* Beta-distribution concentration,
-* bounded Pareto parameters,
-* network attachment values,
-* maturity-category cutoffs,
-* perturbation magnitudes,
-* and catalog-freshness windows.
+```text
+P1–P8, P10–P14, and P21
+```
 
-Run a lightweight smoke analysis:
+P9 is resolved through public-source calibration.
+
+P15–P20 are evaluated through linked convergence and experiment studies.
+
+Direct sensitivity scenarios include variations in:
+
+- framework weights,
+- dimension subweights,
+- Beta-distribution concentration,
+- bounded Pareto parameters,
+- network attachment values,
+- maturity-category boundaries,
+- perturbation magnitude,
+- catalog-freshness windows,
+- and selected operational assumptions.
+
+Run a lightweight smoke profile:
 
 ```bash
 python -m sgb.sensitivity \
@@ -292,7 +432,7 @@ python -m sgb.sensitivity \
   --codes P1 P2 P8 P12 P13 P14 P21
 ```
 
-Run the complete sensitivity analysis:
+Run the complete direct sensitivity study:
 
 ```bash
 python -m sgb.sensitivity \
@@ -300,6 +440,37 @@ python -m sgb.sensitivity \
   --profile full \
   --codes ALL
 ```
+
+Sensitivity rejection is not automatically a software failure. It may indicate that conclusions are genuinely unstable under one or more parameter alternatives.
+
+---
+
+## P9 Public-Source Calibration
+
+P9 represents the organization-type distribution used in the synthetic ecosystem.
+
+The calibrated baseline is:
+
+| Organization Type | Probability |
+|---|---:|
+| Ministry | `0.02` |
+| State enterprise | `0.33` |
+| Private entity | `0.65` |
+
+This distribution is implemented as a **public-source proxy** for Iranian organizations participating in or interacting with the national information-exchange environment.
+
+Configuration metadata records:
+
+```yaml
+public_calibration:
+  P9_complete: true
+  calibration_type: public_source_proxy
+  source_scope: iran_nix_connected_organizations
+```
+
+P9 is not treated as a behaviorally active simulation parameter because organization type currently serves as a population-classification variable rather than an independent operational-dynamics mechanism.
+
+Alternative organization mixes may still be retained as descriptive or stress-test scenarios, but they are not interpreted as direct causal sensitivity parameters unless organization type is connected to explicit behavioral rules.
 
 ---
 
@@ -330,6 +501,7 @@ SGB_Project/
 │   ├── __init__.py
 │   ├── agents.py
 │   ├── calibration.py
+│   ├── check_convergence.py
 │   ├── cli.py
 │   ├── config.py
 │   ├── convergence.py
@@ -339,29 +511,17 @@ SGB_Project/
 │   ├── dynamics.py
 │   ├── experiments.py
 │   ├── frameworks.py
+│   ├── metrics.py
 │   ├── model.py
 │   ├── perturbations.py
 │   ├── pipeline.py
 │   ├── reporting.py
-│   └── sensitivity.py
+│   ├── sensitivity.py
+│   └── visualize.py
 │
 ├── tests/
-│   ├── test_agents.py
-│   ├── test_calibration.py
-│   ├── test_config.py
-│   ├── test_convergence.py
-│   ├── test_dimensions.py
-│   ├── test_distributions.py
-│   ├── test_dynamics.py
-│   ├── test_experiments.py
-│   ├── test_frameworks.py
-│   ├── test_model.py
-│   ├── test_perturbations.py
-│   ├── test_pipeline.py
-│   ├── test_reporting.py
-│   └── test_sensitivity.py
-│
 ├── outputs/
+├── FIX_NOTES.md
 ├── README.md
 ├── RUNBOOK.md
 ├── pyproject.toml
@@ -373,17 +533,18 @@ SGB_Project/
 
 ## Requirements
 
-* Python `3.12+`
-* Mesa
-* NumPy
-* pandas
-* NetworkX
-* SciPy
-* Matplotlib
-* PyYAML
-* pytest
+- Python `3.12` — validated research environment
+- Mesa
+- NumPy
+- pandas
+- NetworkX
+- SciPy
+- Matplotlib
+- PyYAML
+- tqdm
+- pytest
 
-The full dependency list is available in:
+The exact package versions used in the validated environment are pinned in:
 
 ```text
 requirements.txt
@@ -403,7 +564,7 @@ cd SGB_Project
 Create a virtual environment:
 
 ```bash
-python -m venv .venv
+python3.12 -m venv .venv
 ```
 
 Activate it on Linux or macOS:
@@ -426,14 +587,21 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
+Verify the environment:
+
+```bash
+python --version
+python -m pip check
+```
+
 ---
 
 ## Testing
 
-Run the complete test suite:
+Run the complete test suite before generating research results:
 
 ```bash
-python -m pytest -v
+python -m pytest -q
 ```
 
 Run a syntax check:
@@ -446,29 +614,96 @@ Research outputs should not be interpreted while the test suite is failing.
 
 ---
 
-## Pipeline
+## Running Individual Studies
 
-SGB includes an end-to-end research pipeline.
+### Baseline calibration
 
-List all stages:
+```bash
+python -m sgb.calibration \
+  --study configs/studies/baseline_calibration.yaml
+```
+
+### Time convergence
+
+```bash
+python -m sgb.convergence \
+  --study configs/studies/time_convergence.yaml
+```
+
+### Seed convergence
+
+```bash
+python -m sgb.convergence \
+  --study configs/studies/seed_convergence.yaml
+```
+
+### Population convergence
+
+```bash
+python -m sgb.convergence \
+  --study configs/studies/population_convergence.yaml
+```
+
+### Experiment 1
+
+```bash
+python -m sgb.experiments \
+  --config configs/experiments/experiment_1.yaml
+```
+
+### Experiment 2
+
+```bash
+python -m sgb.experiments \
+  --config configs/experiments/experiment_2.yaml
+```
+
+### Experiment 3
+
+```bash
+python -m sgb.experiments \
+  --config configs/experiments/experiment_3.yaml
+```
+
+### Experiment 4
+
+```bash
+python -m sgb.experiments \
+  --config configs/experiments/experiment_4.yaml
+```
+
+### Full sensitivity analysis
+
+```bash
+python -m sgb.sensitivity \
+  --study configs/studies/sensitivity.yaml \
+  --profile full \
+  --codes ALL
+```
+
+---
+
+## Running the Full Pipeline
+
+List all configured stages:
 
 ```bash
 python -m sgb.pipeline --list
 ```
 
-Preview the pipeline without executing simulations:
+Preview the execution plan:
 
 ```bash
 python -m sgb.pipeline --dry-run
 ```
 
-Validate generated artifacts:
+Validate currently available artifacts:
 
 ```bash
 python -m sgb.pipeline --validate
 ```
 
-Run one stage with its dependencies:
+Run one stage with dependencies:
 
 ```bash
 python -m sgb.pipeline \
@@ -486,25 +721,69 @@ python -m sgb.pipeline \
 Run the complete pipeline:
 
 ```bash
-python -m sgb.pipeline
+PYTHONUNBUFFERED=1 \
+python -m sgb.pipeline \
+2>&1 | tee outputs/full_pipeline_console.log
 ```
 
-The complete pipeline runs:
+The complete pipeline executes:
 
-1. automated tests,
-2. baseline calibration,
-3. time convergence,
-4. seed convergence,
-5. population convergence,
-6. Experiments 1–4,
-7. global sensitivity analysis,
-8. and final reporting.
+1. automated tests;
+2. baseline calibration;
+3. time convergence;
+4. seed convergence;
+5. population convergence;
+6. Experiments 1–4;
+7. full direct sensitivity analysis;
+8. final reporting.
+
+The pipeline stops on software or configuration failures according to:
+
+```text
+configs/pipeline.yaml
+```
+
+A scientific rejection may still be recorded as a valid result depending on the stage and command configuration.
+
+---
+
+## Outputs
+
+Generated research artifacts are written under:
+
+```text
+outputs/
+├── calibration/
+├── convergence/
+├── experiments/
+├── sensitivity/
+├── figures/
+├── tables/
+├── raw/
+├── final/
+└── full_pipeline_console.log
+```
+
+Typical artifacts include:
+
+- CSV result tables,
+- JSON metadata,
+- PNG figures,
+- convergence summaries,
+- experiment-level outputs,
+- sensitivity matrices,
+- reporting metadata,
+- pipeline execution records.
+
+Generated outputs should not be edited manually.
+
+Outputs from different code versions or incompatible configurations must not be combined.
 
 ---
 
 ## Reporting
 
-Generate a partial report when some experiment outputs are not yet available:
+Generate a partial report when some large-study artifacts are missing:
 
 ```bash
 python -m sgb.reporting \
@@ -519,7 +798,7 @@ python -m sgb.reporting \
   --config configs/reporting.yaml
 ```
 
-Expected final outputs:
+Expected reporting outputs include:
 
 ```text
 outputs/final/
@@ -532,91 +811,81 @@ outputs/final/
 └── pipeline_run.json
 ```
 
+The reporting layer reads current calibration and sensitivity metadata, including the completed P9 public-source calibration status.
+
 ---
 
 ## Reproducibility
 
 Each final research run should preserve:
 
-* the Git commit identifier,
-* YAML configuration files,
-* dependency versions,
-* seed ranges,
-* CSV result tables,
-* JSON metadata,
-* generated figures,
-* pipeline logs,
-* and the reproducibility manifest.
+- the Git commit identifier,
+- YAML configuration files,
+- exact dependency versions,
+- random-seed ranges,
+- CSV result tables,
+- JSON metadata,
+- generated figures,
+- pipeline logs,
+- artifact indexes,
+- and the reproducibility manifest.
 
 Before using outputs in an academic paper, run:
 
 ```bash
 python -m compileall -q sgb tests
-python -m pytest -v
+python -m pytest -q
 python -m sgb.pipeline --validate
 git status
 git rev-parse HEAD
 ```
 
-Do not combine outputs generated from different commits or incompatible configurations.
+Do not combine outputs generated from different commits or configurations.
 
 ---
 
 ## Current Status
 
-The current implementation includes:
+Version `0.3.0` includes:
 
-* configurable governance submetrics,
-* Appendix-based governance dimension calculations,
-* heterogeneous organization agents,
-* Barabási–Albert network generation,
-* bounded Pareto exchange-volume sampling,
-* framework-neutral operational dynamics,
-* framework-neutral perturbations,
-* recovery modeling,
-* DBL, DMM, and ISF scoring,
-* baseline calibration,
-* time, seed, and population convergence studies,
-* four primary experiments,
-* global sensitivity analysis,
-* reproducibility reporting,
-* and end-to-end pipeline orchestration.
+- configurable governance submetrics,
+- governance dimension calculations,
+- heterogeneous organization agents,
+- Barabási–Albert network generation,
+- bounded Pareto exchange-volume sampling,
+- framework-neutral operational dynamics,
+- baseline-preserving recovery,
+- framework-neutral perturbations,
+- event-time threshold scoring,
+- DBL, DMM, and ISF evaluation,
+- baseline calibration,
+- time, seed, and population convergence studies,
+- four primary experiments,
+- public-source P9 calibration,
+- direct and linked sensitivity coverage,
+- progress reporting,
+- reproducibility reporting,
+- and end-to-end pipeline orchestration.
 
-### P9 public-source calibration
+See:
 
-The baseline organization-type mix is configured as a documented Iranian public-source proxy:
+```text
+FIX_NOTES.md
+```
 
-* government ministries: `0.02`,
-* state enterprises: `0.33`,
-* regulated private entities: `0.65`.
-
-P9 is treated as a public calibration item rather than a simulation sensitivity scenario because organization type is currently a descriptive population label and does not impose organization-type-specific operational behavior.
-
----
-
-## Scientific Limitations
-
-SGB is a synthetic research environment.
-
-Its outputs should be interpreted with the following limitations:
-
-* framework weights are modeling assumptions,
-* dimension weights require sensitivity analysis,
-* maturity categories are definitional partitions,
-* synthetic exchanges do not prove real-world causal relationships,
-* network topology is an approximation,
-* perturbation effects depend on configured assumptions,
-* statistical stability does not establish construct validity,
-* the P9 composition is a public-source proxy rather than a complete census of all eligible NIX/NDEL participants.
+for the methodological and implementation changes introduced in version `0.3.0`.
 
 ---
+
 
 ## Development Workflow
 
 After changing code or configuration:
 
 ```bash
-python -m pytest -v
+python -m compileall -q sgb tests
+python -m pytest -q
+
 git status
 git add -A
 git commit -m "Describe the implementation or research change"
@@ -628,6 +897,7 @@ Recommended `.gitignore` entries:
 
 ```gitignore
 .venv/
+.venv-clean/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -635,12 +905,19 @@ __pycache__/
 htmlcov/
 .DS_Store
 .vscode/
+
 outputs/
+outputs_*/
+
+*.zip
+*.tar.gz
+*.log
 ```
 
 ---
 
+
 ## Repository
 
-* **Source code:** [github.com/01-kai/SGB_Project](https://github.com/01-kai/SGB_Project)
-* **Issues:** [github.com/01-kai/SGB_Project/issues](https://github.com/01-kai/SGB_Project/issues)
+- **Source code:** [github.com/01-kai/SGB_Project](https://github.com/01-kai/SGB_Project)
+- **Issues:** [github.com/01-kai/SGB_Project/issues](https://github.com/01-kai/SGB_Project/issues)
